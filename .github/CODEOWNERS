@@ -1,0 +1,8 @@
+# Default local ownership for VulnWeave. Replace with teams as the project grows.
+* @KumarSanthosh16
+
+# Core contracts and CLI behavior need explicit review by the project owner.
+/packages/core/ @KumarSanthosh16
+/packages/cli/ @KumarSanthosh16
+/rules/ @KumarSanthosh16
+/vulnweave.config.json @KumarSanthosh16

@@ -1,0 +1,9 @@
+node_modules/
+.pnpm-store/
+dist/
+.DS_Store
+*.tsbuildinfo
+.signal-impact/
+.vulnweave/
+vulnweave-report.html
+vulnweave.sarif

@@ -1,0 +1,10 @@
+rules:
+  - id: vulnweave.javascript.no-eval
+    languages: [javascript, typescript]
+    message: "Avoid eval(): executing dynamically constructed code can introduce code-injection vulnerabilities."
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: CWE-95
+      technology: [javascript, typescript]
+    pattern: eval(...)

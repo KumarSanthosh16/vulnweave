@@ -1,0 +1,18 @@
+{
+  "name": "vulnweave",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Local-first code quality and security impact analysis",
+  "packageManager": "pnpm@12.3.4",
+  "scripts": {
+    "build": "pnpm --recursive run build",
+    "check": "pnpm build && pnpm --recursive run check",
+    "test": "pnpm build && pnpm --recursive run test",
+    "cli": "pnpm --filter @vulnweave/cli start"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}

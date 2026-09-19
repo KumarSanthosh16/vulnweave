@@ -1,0 +1,9 @@
+{
+  "name": "@vulnweave/tree-sitter-indexer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "scripts": { "build": "tsc -p tsconfig.json", "check": "tsc --noEmit -p tsconfig.json", "test": "node --import tsx --test src/**/*.test.ts" },
+  "dependencies": { "@vulnweave/core": "workspace:*", "tree-sitter": "^0.25.0", "tree-sitter-javascript": "^0.25.0", "tree-sitter-typescript": "^0.23.2" }
+}

@@ -1,0 +1,68 @@
+name: VulnWeave security gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Validate and test
+        run: |
+          pnpm check
+          pnpm test
+      - name: Install Semgrep
+        run: pipx install semgrep
+      - name: Install Gitleaks
+        run: |
+          GITLEAKS_VERSION=8.30.1
+          curl --fail --location --silent --show-error "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+      - name: Install OSV-Scanner
+        run: |
+          OSV_VERSION=2.5.1
+          curl --fail --location --silent --show-error "https://github.com/google/osv-scanner/releases/download/v${OSV_VERSION}/osv-scanner_linux_amd64" -o /tmp/osv-scanner
+          install -m 0755 /tmp/osv-scanner /usr/local/bin/osv-scanner
+      - name: Install Trivy
+        run: |
+          TRIVY_VERSION=0.74.0
+          curl --fail --location --silent --show-error "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" -o /tmp/trivy.tar.gz
+          curl --fail --location --silent --show-error "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_checksums.txt" -o /tmp/trivy_checksums.txt
+          grep " trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz$" /tmp/trivy_checksums.txt | sed "s|  trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz$|  /tmp/trivy.tar.gz|" | sha256sum --check --status
+          tar -xzf /tmp/trivy.tar.gz -C /tmp trivy
+          install -m 0755 /tmp/trivy /usr/local/bin/trivy
+      - name: Run high-severity merge gate
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            pnpm cli -- . --changed-since "origin/${{ github.base_ref }}" --review-changes --format summary
+          else
+            pnpm cli -- . --format summary
+          fi
+      - name: Export SARIF
+        if: always()
+        run: node packages/cli/dist/index.js . --format sarif > vulnweave.sarif
+      - name: Upload SARIF artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vulnweave-sarif
+          path: vulnweave.sarif
+          if-no-files-found: error

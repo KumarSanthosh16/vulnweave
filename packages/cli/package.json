@@ -1,0 +1,9 @@
+{
+  "name": "@vulnweave/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": { "vulnweave": "./dist/index.js" },
+  "scripts": { "build": "tsc -p tsconfig.json", "check": "tsc --noEmit -p tsconfig.json", "test": "node --import tsx --test", "start": "tsx src/index.ts" },
+  "dependencies": { "@vulnweave/core": "workspace:*", "@vulnweave/gitleaks-analyzer": "workspace:*", "@vulnweave/mock-analyzer": "workspace:*", "@vulnweave/osv-analyzer": "workspace:*", "@vulnweave/semgrep-analyzer": "workspace:*", "@vulnweave/tree-sitter-indexer": "workspace:*", "@vulnweave/trivy-analyzer": "workspace:*" }
+}

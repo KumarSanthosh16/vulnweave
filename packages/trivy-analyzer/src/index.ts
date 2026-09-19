@@ -1,0 +1,124 @@
+import { execFile as executeFile } from "node:child_process";
+import { promisify } from "node:util";
+import type { AnalyzerAdapter, AnalysisRequest, FindingInput, Severity, SourceLocation } from "@vulnweave/core";
+
+const execFile = promisify(executeFile);
+
+export interface TrivyVulnerability {
+  VulnerabilityID: string;
+  PkgName: string;
+  InstalledVersion?: string;
+  FixedVersion?: string;
+  Title?: string;
+  Description?: string;
+  Severity?: string;
+  PrimaryURL?: string;
+  References?: string[];
+}
+
+export interface TrivyMisconfiguration {
+  ID: string;
+  Title?: string;
+  Description?: string;
+  Severity?: string;
+  PrimaryURL?: string;
+  CauseMetadata?: { Resource?: string; StartLine?: number; EndLine?: number };
+}
+
+export interface TrivyResult {
+  Target: string;
+  Type?: string;
+  Vulnerabilities?: TrivyVulnerability[];
+  Misconfigurations?: TrivyMisconfiguration[];
+}
+
+export interface TrivyReport { Results?: TrivyResult[]; }
+
+/** Runs local Trivy filesystem checks for dependencies and configuration. */
+export class TrivyAnalyzer implements AnalyzerAdapter {
+  readonly id = "trivy";
+  readonly displayName = "Trivy";
+
+  async isAvailable(): Promise<boolean> {
+    try { await execFile("trivy", ["--version"]); return true; } catch { return false; }
+  }
+
+  async analyze(request: AnalysisRequest): Promise<FindingInput[]> {
+    const { stdout } = await execFile("trivy", [
+      "fs", "--format", "json", "--quiet", "--scanners", "vuln,misconfig",
+      "--skip-dirs", "node_modules", "--skip-dirs", ".git", "--skip-dirs", ".vulnweave", "--skip-dirs", "**/fixtures/**",
+      request.rootDir
+    ], { maxBuffer: 20 * 1024 * 1024 });
+    return parseTrivyReport(JSON.parse(stdout) as TrivyReport);
+  }
+}
+
+/** Converts Trivy's filesystem report without retaining configuration file contents. */
+export function parseTrivyReport(report: TrivyReport): FindingInput[] {
+  return (report.Results ?? []).flatMap((result) => [
+    ...(result.Vulnerabilities ?? []).map((vulnerability) => normalizeVulnerability(result, vulnerability)),
+    ...(result.Misconfigurations ?? []).map((misconfiguration) => normalizeMisconfiguration(result, misconfiguration))
+  ]);
+}
+
+function normalizeVulnerability(result: TrivyResult, vulnerability: TrivyVulnerability): FindingInput {
+  const version = vulnerability.InstalledVersion ?? "unknown";
+  return {
+    ruleId: vulnerability.VulnerabilityID,
+    category: "dependency",
+    severity: normalizeSeverity(vulnerability.Severity),
+    title: `${vulnerability.PkgName}@${version} is affected by ${vulnerability.VulnerabilityID}`,
+    message: vulnerability.Title ?? vulnerability.Description ?? "A known vulnerability affects this dependency.",
+    fingerprint: `trivy:vulnerability:${result.Target}:${vulnerability.PkgName}:${version}:${vulnerability.VulnerabilityID}`,
+    references: uniqueReferences(vulnerability.PrimaryURL, vulnerability.References),
+    metadata: { target: result.Target, targetType: result.Type ?? "unknown", package: vulnerability.PkgName, version, fixedVersion: vulnerability.FixedVersion ?? "" },
+    evidence: [{
+      id: `trivy:vulnerability:${result.Target}:${vulnerability.PkgName}:${vulnerability.VulnerabilityID}`,
+      kind: "dependency",
+      summary: "Trivy found a vulnerable dependency in this local target.",
+      metadata: { package: vulnerability.PkgName, version, target: result.Target }
+    }]
+  };
+}
+
+function normalizeMisconfiguration(result: TrivyResult, misconfiguration: TrivyMisconfiguration): FindingInput {
+  const location = configurationLocation(result.Target, misconfiguration.CauseMetadata);
+  return {
+    ruleId: misconfiguration.ID,
+    category: "infrastructure",
+    severity: normalizeSeverity(misconfiguration.Severity),
+    title: misconfiguration.Title ?? misconfiguration.ID,
+    message: misconfiguration.Description ?? "Trivy found a configuration issue.",
+    location,
+    fingerprint: `trivy:misconfiguration:${result.Target}:${misconfiguration.ID}:${location?.startLine ?? 0}`,
+    references: uniqueReferences(misconfiguration.PrimaryURL),
+    metadata: { target: result.Target, targetType: result.Type ?? "unknown", resource: misconfiguration.CauseMetadata?.Resource ?? "" },
+    evidence: [{
+      id: `trivy:misconfiguration:${result.Target}:${misconfiguration.ID}:${location?.startLine ?? 0}`,
+      kind: "configuration",
+      summary: "Trivy found this configuration issue in a local target.",
+      location,
+      metadata: { target: result.Target, resource: misconfiguration.CauseMetadata?.Resource ?? "" }
+    }]
+  };
+}
+
+function configurationLocation(path: string, cause?: TrivyMisconfiguration["CauseMetadata"]): SourceLocation | undefined {
+  if (!cause?.StartLine || cause.StartLine < 1) return undefined;
+  return { path, startLine: cause.StartLine, startColumn: 1, endLine: cause.EndLine };
+}
+
+function uniqueReferences(primary?: string, references?: string[]): string[] | undefined {
+  const values = [...new Set([primary, ...(references ?? [])].filter((value): value is string => Boolean(value)))];
+  return values.length > 0 ? values : undefined;
+}
+
+function normalizeSeverity(value?: string): Severity {
+  switch (value?.toUpperCase()) {
+    case "CRITICAL": return "critical";
+    case "HIGH": return "high";
+    case "MEDIUM": case "MODERATE": return "medium";
+    case "LOW": return "low";
+    default: return "info";
+  }
+}

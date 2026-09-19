@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "analyzer": "all",
+  "semgrepConfig": "rules/semgrep-starter.yml",
+  "failOn": "high",
+  "requireAnalyzers": true
+}
