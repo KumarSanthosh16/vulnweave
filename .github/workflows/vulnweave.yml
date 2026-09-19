@@ -58,9 +58,14 @@ jobs:
           else
             pnpm cli -- . --format summary
           fi
+      # This step deliberately runs even when the gate fails, so SARIF remains
+      # available for triage and does not depend on an earlier build directory.
+      - name: Build SARIF exporter
+        if: always()
+        run: pnpm build
       - name: Export SARIF
         if: always()
-        run: node packages/cli/dist/index.js . --format sarif > vulnweave.sarif
+        run: node ./packages/cli/dist/index.js . --format sarif > vulnweave.sarif
       # Code Scanning must be enabled before private repositories can accept SARIF.
       # Keep the local artifact even when this optional GitHub integration is unavailable.
       - name: Publish SARIF to GitHub Code Scanning
