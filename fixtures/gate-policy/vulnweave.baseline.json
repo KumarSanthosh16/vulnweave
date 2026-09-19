@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "failOn": "high",
+  "requireAnalyzers": true,
+  "suppressions": []
+}

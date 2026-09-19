@@ -1,0 +1,11 @@
+{
+  "id": "fixture:high",
+  "analyzer": "fixture",
+  "ruleId": "fixture.high-risk",
+  "category": "security",
+  "severity": "high",
+  "title": "Fixture high-severity risk",
+  "message": "Deterministic CI gate fixture.",
+  "fingerprint": "fixture-high-risk-v1",
+  "evidence": []
+}

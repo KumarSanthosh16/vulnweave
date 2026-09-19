@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "failOn": "high",
+  "requireAnalyzers": true,
+  "suppressions": [{
+    "fingerprint": "fixture-high-risk-v1",
+    "reason": "Fixture-only approved exception; proves expiry-bound gate behavior.",
+    "owner": "security@example.test",
+    "expiresOn": "2026-12-31"
+  }]
+}

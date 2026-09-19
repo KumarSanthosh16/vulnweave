@@ -102,6 +102,8 @@ Use a suppression only for an explicitly reviewed finding fingerprint, in `vulnw
 }
 ```
 
+The automated suite includes a deterministic gate fixture: a high finding must fail the baseline, and only an approved, unexpired suppression may let it pass. This keeps the CI gate behavior protected as policy handling evolves.
+
 ## Finding correlation
 
 When OSV-Scanner and Trivy report the same package advisory, VulnWeave correlates the scanner observations into one canonical dependency issue. It preserves all underlying evidence and chooses the highest reported severity, so summaries, priorities, SARIF export, and gates do not double-count the same advisory. The summary only prints a `Correlation:` line when this reduces the number of findings. Analyzer filtering still recognizes each contributing scanner, such as `--filter-analyzer osv`.
