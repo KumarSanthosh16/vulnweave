@@ -2,7 +2,7 @@ import type { ScanRecord } from "./run-store.js";
 
 export type EvidenceNodeKind = "finding" | "evidence" | "file" | "dependency" | "symbol";
 export interface EvidenceNode { id: string; kind: EvidenceNodeKind; label: string; }
-export interface EvidenceEdge { from: string; to: string; relation: "has_evidence" | "located_in" | "affects_dependency" | "located_in_symbol" | "imports"; }
+export interface EvidenceEdge { from: string; to: string; relation: "has_evidence" | "located_in" | "affects_dependency" | "located_in_symbol" | "imports" | "statically_imported_by"; }
 export interface EvidenceGraph { schemaVersion: 1; scanId: string; nodes: EvidenceNode[]; edges: EvidenceEdge[]; }
 
 /** Builds an auditable local graph from already-normalized scanner evidence. */
@@ -40,6 +40,18 @@ export function buildEvidenceGraph(record: ScanRecord): EvidenceGraph {
           edges.push({ from: findingId, to: dependencyId, relation: "affects_dependency" });
         }
       }
+    }
+  }
+  for (const reachability of record.dependencyReachability ?? []) {
+    if (reachability.status !== "referenced") continue;
+    const finding = record.findings.find((candidate) => candidate.id === reachability.findingId);
+    const version = typeof finding?.metadata?.version === "string" ? finding.metadata.version : "unknown";
+    const dependencyId = `dependency:${reachability.packageName}@${version}`;
+    addNode({ id: dependencyId, kind: "dependency", label: dependencyId.slice("dependency:".length) });
+    for (const usage of reachability.usages) {
+      const fileId = `file:${usage.path}`;
+      addNode({ id: fileId, kind: "file", label: usage.path });
+      edges.push({ from: dependencyId, to: fileId, relation: "statically_imported_by" });
     }
   }
   return { schemaVersion: 1, scanId: record.id, nodes: [...nodes.values()], edges };

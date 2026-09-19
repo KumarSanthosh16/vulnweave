@@ -92,6 +92,8 @@ Use `--format table` for a compact finding list, then narrow it without changing
 
 Each saved scan now writes a local graph JSON file to `.vulnweave/graphs/`. It connects normalized findings to source files, scanner evidence, and affected dependencies. View its compact shape with `pnpm cli -- . --analyzer all --semgrep-config rules/semgrep-starter.yml --format graph`. This is the stable foundation for later Tree-sitter symbol and impact relationships.
 
+When a dependency finding has static JavaScript or TypeScript import evidence, the graph also connects that dependency node to each importing file. This is evidence of an indexed static import, not a runtime-reachability claim.
+
 ## Tree-sitter symbols
 
 VulnWeave now indexes JavaScript, TypeScript, and TSX declarations locally with Tree-sitter. Run `pnpm cli -- . --analyzer all --semgrep-config rules/semgrep-starter.yml --format symbols` to list functions, classes, methods, and interfaces with their source locations. Every scan links a source finding to its narrowest enclosing symbol, then persists that relationship in the evidence graph.
