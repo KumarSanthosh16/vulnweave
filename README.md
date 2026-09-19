@@ -45,6 +45,17 @@ The `AnalysisOrchestrator` moves one run through `idle → preparing → running
 
 The real adapters are Gitleaks (secrets), Semgrep CE (source patterns), OSV-Scanner (dependency vulnerabilities), and Trivy (filesystem dependencies and configuration). Run `pnpm cli -- . --analyzer gitleaks` after installing [Gitleaks](https://github.com/gitleaks/gitleaks); matched secret text is deliberately excluded from the normalized result. Semgrep uses an explicit local rules file: `pnpm cli -- . --analyzer semgrep --semgrep-config rules/semgrep-starter.yml`. This repository includes that small starter policy, which flags JavaScript/TypeScript `eval` usage. Run `pnpm cli -- . --analyzer osv` after installing [OSV-Scanner](https://google.github.io/osv-scanner/installation/). OSV-Scanner examines local manifests and lockfiles, then queries the OSV vulnerability database for advisories. Run `pnpm cli -- . --analyzer trivy --format summary` after installing [Trivy](https://trivy.dev/latest/docs/); it enables Trivy's vulnerability and misconfiguration scanners, while Gitleaks remains the dedicated secret scanner. Trivy may overlap OSV on dependency advisories; that is intentional for now, because its configuration coverage adds a distinct evidence source. Each analyzer remains a replaceable worker; their outputs converge on the same schema, then feed a future evidence graph that connects findings to symbols, files, dependencies, owners, and change impact.
 
+### Optional local policy packs
+
+The default `semgrep-starter.yml` stays deliberately small. Add a reviewed pack explicitly with `--semgrep-pack typescript-security` (dynamic-code and direct child-process execution checks) or `--semgrep-pack typescript-quality` (diagnostic `console.log` checks). Packs are additive, so this enables the starter policy plus the selected pack:
+
+```bash
+pnpm cli -- . --analyzer semgrep --semgrep-pack typescript-security --format table
+pnpm cli -- . --analyzer semgrep --semgrep-pack typescript-quality --format table
+```
+
+Pack rules are versioned local YAML under `rules/packs/`, and each finding retains its `vulnweavePack` metadata for provenance. Review and tune local rules before enabling them in a merge gate.
+
 Tree-sitter belongs beside that graph as a local code-structure provider, not as an analyzer replacement. AI should consume normalized evidence and graph context to explain prioritization or propose remediation; it must not be the source of record for scanner claims.
 
 ## Development checks

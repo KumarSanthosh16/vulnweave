@@ -1,0 +1,21 @@
+rules:
+  - id: vulnweave.typescript-security.no-new-function
+    languages: [javascript, typescript]
+    message: "Avoid new Function(): dynamically constructed code can introduce code-injection vulnerabilities."
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: CWE-95
+      vulnweavePack: typescript-security
+    pattern: new Function(...)
+  - id: vulnweave.typescript-security.no-child-process-exec
+    languages: [javascript, typescript]
+    message: "Avoid direct child_process.exec(): validate arguments and prefer safer process APIs when possible."
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: CWE-78
+      vulnweavePack: typescript-security
+    pattern-either:
+      - pattern: require("child_process").exec(...)
+      - pattern: require("node:child_process").exec(...)

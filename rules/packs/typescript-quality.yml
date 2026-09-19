@@ -1,0 +1,9 @@
+rules:
+  - id: vulnweave.typescript-quality.no-console-log
+    languages: [javascript, typescript]
+    message: "Review console.log(): avoid leaving diagnostic output in production paths."
+    severity: INFO
+    metadata:
+      category: quality
+      vulnweavePack: typescript-quality
+    pattern: console.log(...)

@@ -10,7 +10,7 @@ import { TrivyAnalyzer } from "@vulnweave/trivy-analyzer";
 
 const args = process.argv.slice(2);
 if (args.includes("--help") || args.includes("-h")) {
-  console.log("Usage: vulnweave [path] [--analyzer all|mock|gitleaks|osv|semgrep|trivy] [--semgrep-config rules.yml] [--format json|summary|table|graph|symbols|priorities|hotspots|changes|review|trend|reachability|remediation|ownership|explain|sarif|html] [--history N] [--changed-since git-ref] [--review-changes] [--finding id] [--severity level] [--category type] [--filter-analyzer id] [--include-tests] [--top N] [--baseline latest|run-id] [--fail-on info|low|medium|high|critical] [--require-analyzers] [--compare latest|run-id] [--no-save]\n\nResults are saved locally under .vulnweave/ unless --no-save is used.");
+  console.log("Usage: vulnweave [path] [--analyzer all|mock|gitleaks|osv|semgrep|trivy] [--semgrep-config rules.yml] [--semgrep-pack typescript-security|typescript-quality] [--format json|summary|table|graph|symbols|priorities|hotspots|changes|review|trend|reachability|remediation|ownership|explain|sarif|html] [--history N] [--changed-since git-ref] [--review-changes] [--finding id] [--severity level] [--category type] [--filter-analyzer id] [--include-tests] [--top N] [--baseline latest|run-id] [--fail-on info|low|medium|high|critical] [--require-analyzers] [--compare latest|run-id] [--no-save]\n\nResults are saved locally under .vulnweave/ unless --no-save is used.");
   process.exit(0);
 }
 
@@ -91,7 +91,8 @@ if (!gate.passed || !analyzerHealth.passed) process.exitCode = 1;
 interface ParsedOptions {
   analyzer?: string;
   rootDir: string;
-  semgrepConfig?: string;
+  semgrepConfig?: string[];
+  semgrepPacks: SemgrepPack[];
   format: "json" | "summary" | "table" | "graph" | "symbols" | "priorities" | "hotspots" | "changes" | "review" | "trend" | "reachability" | "remediation" | "ownership" | "explain" | "sarif" | "html";
   finding?: string;
   compare?: string;
@@ -111,7 +112,8 @@ interface ResolvedOptions extends Omit<ParsedOptions, "analyzer"> { analyzer: st
 
 function parseOptions(values: string[]): ParsedOptions {
   let analyzer: string | undefined;
-  let semgrepConfig: string | undefined;
+  const semgrepConfig: string[] = [];
+  const semgrepPacks: SemgrepPack[] = [];
   let rootDir: string | undefined;
   let format: "json" | "summary" | "table" | "graph" | "symbols" | "priorities" | "hotspots" | "changes" | "review" | "trend" | "reachability" | "remediation" | "ownership" | "explain" | "sarif" | "html" = "json";
   let finding: string | undefined;
@@ -134,7 +136,8 @@ function parseOptions(values: string[]): ParsedOptions {
     if (value === undefined) break;
     if (value === "--") continue;
     if (value === "--analyzer") { analyzer = requireValue(values, ++index, "--analyzer"); continue; }
-    if (value === "--semgrep-config") { semgrepConfig = requireValue(values, ++index, "--semgrep-config"); continue; }
+    if (value === "--semgrep-config") { semgrepConfig.push(requireValue(values, ++index, "--semgrep-config")); continue; }
+    if (value === "--semgrep-pack") { semgrepPacks.push(requireSemgrepPack(requireValue(values, ++index, "--semgrep-pack"))); continue; }
     if (value === "--format") { format = requireFormat(requireValue(values, ++index, "--format")); continue; }
     if (value === "--compare") { compare = requireValue(values, ++index, "--compare"); continue; }
     if (value === "--no-save") { save = false; continue; }
@@ -157,8 +160,8 @@ function parseOptions(values: string[]): ParsedOptions {
   return {
     analyzer,
     rootDir: rootDir ?? invocationDir,
-    semgrepConfig: semgrepConfig ? resolve(invocationDir, semgrepConfig) : undefined,
-    format, finding, compare, baseline, changedSince, reviewChanges, failOn, requireAnalyzers, save, includeTests, top, history, filters
+    semgrepConfig: semgrepConfig.length > 0 ? semgrepConfig.map((path) => resolve(invocationDir, path)) : undefined,
+    semgrepPacks, format, finding, compare, baseline, changedSince, reviewChanges, failOn, requireAnalyzers, save, includeTests, top, history, filters
   };
 }
 
@@ -167,7 +170,7 @@ async function resolveOptions(parsed: ParsedOptions): Promise<ResolvedOptions> {
   return {
     ...parsed,
     analyzer: parsed.analyzer ?? config?.analyzer ?? "mock",
-    semgrepConfig: parsed.semgrepConfig ?? (config?.semgrepConfig ? resolve(parsed.rootDir, config.semgrepConfig) : undefined),
+    semgrepConfig: [...(parsed.semgrepConfig ?? (config?.semgrepConfig ? [resolve(parsed.rootDir, config.semgrepConfig)] : [])), ...parsed.semgrepPacks.map((pack) => resolve(parsed.rootDir, "rules", "packs", `${pack}.yml`))],
     failOn: parsed.failOn ?? config?.failOn,
     requireAnalyzers: parsed.requireAnalyzers || (parsed.analyzer === undefined && config?.requireAnalyzers === true),
     suppressions: config?.suppressions ?? []
@@ -198,6 +201,12 @@ function requireSeverity(value: string): Severity {
 function requireCategory(value: string): FindingCategory {
   if (["security", "quality", "dependency", "secret", "infrastructure"].includes(value)) return value as FindingCategory;
   throw new Error("--category must be security, quality, dependency, secret, or infrastructure");
+}
+
+type SemgrepPack = "typescript-security" | "typescript-quality";
+function requireSemgrepPack(value: string): SemgrepPack {
+  if (value === "typescript-security" || value === "typescript-quality") return value;
+  throw new Error("--semgrep-pack must be typescript-security or typescript-quality");
 }
 
 function requireValue(values: string[], index: number, option: string): string {

@@ -20,7 +20,7 @@ export interface SemgrepResult {
 
 interface SemgrepReport { results: SemgrepResult[]; }
 
-/** Runs a local Semgrep binary against an explicitly supplied local rule configuration. */
+/** Runs a local Semgrep binary against explicitly supplied local rule configurations. */
 export class SemgrepAnalyzer implements AnalyzerAdapter {
   readonly id = "semgrep";
   readonly displayName = "Semgrep";
@@ -35,20 +35,20 @@ export class SemgrepAnalyzer implements AnalyzerAdapter {
   }
 
   async analyze(request: AnalysisRequest): Promise<FindingInput[]> {
-    const configPath = request.config?.semgrepConfig;
-    if (typeof configPath !== "string" || configPath.length === 0) {
-      throw new Error("Semgrep requires a local rules file: pass --semgrep-config path/to/rules.yml");
+    const configPaths = semgrepConfigPaths(request.config?.semgrepConfig);
+    if (configPaths.length === 0) {
+      throw new Error("Semgrep requires local rules: pass --semgrep-config path/to/rules.yml or --semgrep-pack name");
     }
     const { stdout } = await execFile("semgrep", [
-      "scan", "--json", "--quiet", "--exclude", "fixtures", "--config", configPath, request.rootDir
+      "scan", "--json", "--quiet", "--exclude", "fixtures", ...configPaths.flatMap((path) => ["--config", path]), request.rootDir
     ], { maxBuffer: 20 * 1024 * 1024 });
     const report = JSON.parse(stdout) as SemgrepReport;
-    return relativizeFindings(parseSemgrepReport(report.results, configPath), request.rootDir);
+    return relativizeFindings(parseSemgrepReport(report.results, configPaths), request.rootDir);
   }
 }
 
 /** Converts Semgrep's tool-specific JSON into product-owned findings. */
-export function parseSemgrepReport(results: SemgrepResult[], configPath?: string): FindingInput[] {
+export function parseSemgrepReport(results: SemgrepResult[], configPath?: string | string[]): FindingInput[] {
   return results.map((result) => {
     const location: SourceLocation = {
       path: result.path,
@@ -90,13 +90,20 @@ export function relativizeFindings(findings: FindingInput[], rootDir: string): F
   }));
 }
 
-function normalizeRuleId(checkId: string, configPath?: string): string {
+function normalizeRuleId(checkId: string, configPath?: string | string[]): string {
   const yamlSuffix = checkId.match(/\.ya?ml\.(.+)$/i)?.[1];
   if (yamlSuffix) return yamlSuffix;
-  if (!configPath) return checkId;
-  const configName = basename(configPath, extname(configPath));
-  const configIndex = checkId.lastIndexOf(`${configName}.`);
-  return configIndex >= 0 ? checkId.slice(configIndex + configName.length + 1) : checkId;
+  for (const path of typeof configPath === "string" ? [configPath] : configPath ?? []) {
+    const configName = basename(path, extname(path));
+    const configIndex = checkId.lastIndexOf(`${configName}.`);
+    if (configIndex >= 0) return checkId.slice(configIndex + configName.length + 1);
+  }
+  return checkId;
+}
+
+function semgrepConfigPaths(value: unknown): string[] {
+  if (typeof value === "string") return value ? [value] : [];
+  return Array.isArray(value) ? value.filter((path): path is string => typeof path === "string" && path.length > 0) : [];
 }
 
 function relativizeLocation(location: SourceLocation | undefined, rootDir: string): SourceLocation | undefined {
