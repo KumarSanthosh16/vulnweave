@@ -23,4 +23,5 @@ export * from "./schemas.js";
 export * from "./sarif.js";
 export * from "./suppressions.js";
 export * from "./trends.js";
+export * from "./tool-versions.js";
 export * from "./upgrade-plan.js";

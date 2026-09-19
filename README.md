@@ -72,6 +72,10 @@ Every CLI scan is saved locally under `.vulnweave/runs/`; the most recent scan i
 
 Run the available real analyzers together with `pnpm cli -- . --analyzer all --semgrep-config rules/semgrep-starter.yml --format summary`. A failed or unavailable scanner is recorded in the summary and does not prevent the other scanners from producing findings. For CI, add `--require-analyzers`: this exits unsuccessfully if any selected analyzer is unavailable or fails, independently of the finding-severity gate.
 
+## Installation diagnostics
+
+Run `pnpm cli -- --version` to show the VulnWeave version and whether Gitleaks, Semgrep, OSV-Scanner, and Trivy are installed. This is read-only and does not scan the current project.
+
 ## Project policy
 
 `vulnweave.config.json` is a versioned, committed scan configuration. It selects analyzers, rules, and the baseline policy file. `vulnweave.baseline.json` is the separate reviewable risk policy: it holds the gate threshold, analyzer-health requirement, and approved exceptions. With both files committed, `pnpm cli -- . --format summary` uses those defaults; an explicitly supplied CLI option takes precedence. Keep local state and reports under `.vulnweave/`, not in either policy file.
