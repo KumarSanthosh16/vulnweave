@@ -117,6 +117,10 @@ Use `--format priorities` to rank findings deterministically. The score starts w
 
 For dependency findings, `pnpm cli -- . --format reachability` identifies whether the affected package is statically imported by indexed JavaScript or TypeScript source. A `referenced` result contributes a small, explicit priority signal. `not-observed` only means no indexed static import was found—it never claims that a package is runtime-unreachable, because dynamic imports, generated code, other languages, and deployment configuration may still use it. The same evidence appears in the HTML report when dependency findings exist.
 
+## Dependency upgrade planning
+
+Use `pnpm cli -- . --format upgrades` to turn dependency findings into a non-mutating upgrade plan. When Trivy reports a fixed version, the plan shows it alongside the installed version and indexed import count. When no scanner-reported fixed version exists, the plan clearly requests manual advisory review rather than guessing a target version. It never edits lockfiles or packages.
+
 ## Remediation guidance
 
 Use `pnpm cli -- . --format remediation` for deterministic next-step guidance. It derives an advisory from the normalized finding: dependency findings use the package and fixed-version evidence when available; secret findings recommend rotation without exposing matched text; source and configuration findings retain their reported location. Guidance never changes code, dependencies, credentials, or configuration. It is also included in the local HTML report.

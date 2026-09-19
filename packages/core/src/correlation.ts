@@ -53,6 +53,7 @@ function mergeGroup(group: Finding[]): Finding {
   const analyzerIds = [...new Set(group.map((finding) => finding.analyzer))].sort();
   const evidence = group.flatMap((finding) => finding.evidence.map((item) => annotateEvidence(item, finding.analyzer)));
   const references = [...new Set(group.flatMap((finding) => finding.references ?? []))];
+  const fixedVersion = group.map((finding) => finding.metadata?.fixedVersion).find((value): value is string => typeof value === "string" && value.length > 0);
   const advisory = advisoryKeys(primary)[0] ?? primary.ruleId;
   return {
     ...primary,
@@ -64,6 +65,7 @@ function mergeGroup(group: Finding[]): Finding {
     references: references.length > 0 ? references : undefined,
     metadata: {
       ...primary.metadata,
+      ...(fixedVersion ? { fixedVersion } : {}),
       analyzers: analyzerIds.join(","),
       observationCount: group.length,
       sourceFindingIds: group.map((finding) => finding.id).sort().join(",")

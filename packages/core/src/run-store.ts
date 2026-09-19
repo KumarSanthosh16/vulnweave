@@ -13,6 +13,7 @@ import type { AppliedSuppression } from "./suppressions.js";
 import type { ChangeImpact } from "./impact-surface.js";
 import type { RemediationAdvice } from "./remediation.js";
 import type { FindingOwnership } from "./ownership.js";
+import type { DependencyUpgradePlan } from "./upgrade-plan.js";
 
 export interface ScanRecord {
   schemaVersion: 1;
@@ -34,6 +35,7 @@ export interface ScanRecord {
   dependencyReachability?: DependencyReachability[];
   remediation?: RemediationAdvice[];
   ownership?: FindingOwnership[];
+  dependencyUpgradePlan?: DependencyUpgradePlan[];
   gate?: GateResult;
   analyzerHealth?: AnalyzerHealthResult;
   suppressions?: AppliedSuppression[];
