@@ -118,6 +118,8 @@ Use `--changed-since <git-ref> --format changes` to compare the current `HEAD` w
 
 For a pull-request-focused severity gate, add `--review-changes`: `pnpm cli -- . --changed-since main --review-changes --format summary`. It evaluates only findings in changed JavaScript/TypeScript files and their local import dependents. The scanners still inspect the whole repository and the normal full-repository gate remains the recommended protected-branch check. The command fails clearly when Git change context is unavailable rather than silently evaluating an empty scope.
 
+Use `--format review` to produce one copyable review packet for a Git change: `pnpm cli -- . --changed-since main --format review`. It combines changed and import-affected findings with deterministic priority, CODEOWNERS routing, and remediation guidance. It does not post comments or contact owners.
+
 ## Local HTML report
 
 Create a self-contained dashboard from a scan record without starting a server or sending data anywhere:

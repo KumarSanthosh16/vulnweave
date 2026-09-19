@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { resolve } from "node:path";
-import { AnalysisOrchestrator, analyzeChangeImpact, applySuppressions, assessDependencyReachability, assignFindingOwners, buildEvidenceGraph, buildRemediationAdvice, buildScanTrend, changedPaths, changedPathsSince, compareScanRecords, correlateFindings, evaluateAnalyzerHealth, evaluateGate, filterFindings, findingsInChangeScope, formatAnalyzerHealth, formatChangeImpact, formatDependencyReachability, formatFindingExplanation, formatFindingsTable, formatGateResult, formatGraphSummary, formatHotspotTable, formatOwnershipTable, formatPriorityTable, formatRemediationTable, formatScanSummary, formatScanTrend, linkFindingsToSymbols, listScanRecords, loadCodeOwners, loadProjectConfig, loadScanRecord, rankFileHotspots, rankFindings, runAnalyzers, saveScanRecord, toHtmlReport, toSarif, type FindingCategory, type FindingSuppression, type Severity } from "@vulnweave/core";
+import { AnalysisOrchestrator, analyzeChangeImpact, applySuppressions, assessDependencyReachability, assignFindingOwners, buildEvidenceGraph, buildRemediationAdvice, buildScanTrend, changedPaths, changedPathsSince, compareScanRecords, correlateFindings, evaluateAnalyzerHealth, evaluateGate, filterFindings, findingsInChangeScope, formatAnalyzerHealth, formatChangeImpact, formatDependencyReachability, formatFindingExplanation, formatFindingsTable, formatGateResult, formatGraphSummary, formatHotspotTable, formatOwnershipTable, formatPriorityTable, formatRemediationTable, formatReviewPacket, formatScanSummary, formatScanTrend, linkFindingsToSymbols, listScanRecords, loadCodeOwners, loadProjectConfig, loadScanRecord, rankFileHotspots, rankFindings, runAnalyzers, saveScanRecord, toHtmlReport, toSarif, type FindingCategory, type FindingSuppression, type Severity } from "@vulnweave/core";
 import { GitleaksAnalyzer } from "@vulnweave/gitleaks-analyzer";
 import { MockAnalyzer } from "@vulnweave/mock-analyzer";
 import { OsvAnalyzer } from "@vulnweave/osv-analyzer";
@@ -10,7 +10,7 @@ import { TrivyAnalyzer } from "@vulnweave/trivy-analyzer";
 
 const args = process.argv.slice(2);
 if (args.includes("--help") || args.includes("-h")) {
-  console.log("Usage: vulnweave [path] [--analyzer all|mock|gitleaks|osv|semgrep|trivy] [--semgrep-config rules.yml] [--format json|summary|table|graph|symbols|priorities|hotspots|changes|trend|reachability|remediation|ownership|explain|sarif|html] [--history N] [--changed-since git-ref] [--review-changes] [--finding id] [--severity level] [--category type] [--filter-analyzer id] [--include-tests] [--top N] [--baseline latest|run-id] [--fail-on info|low|medium|high|critical] [--require-analyzers] [--compare latest|run-id] [--no-save]\n\nResults are saved locally under .vulnweave/ unless --no-save is used.");
+  console.log("Usage: vulnweave [path] [--analyzer all|mock|gitleaks|osv|semgrep|trivy] [--semgrep-config rules.yml] [--format json|summary|table|graph|symbols|priorities|hotspots|changes|review|trend|reachability|remediation|ownership|explain|sarif|html] [--history N] [--changed-since git-ref] [--review-changes] [--finding id] [--severity level] [--category type] [--filter-analyzer id] [--include-tests] [--top N] [--baseline latest|run-id] [--fail-on info|low|medium|high|critical] [--require-analyzers] [--compare latest|run-id] [--no-save]\n\nResults are saved locally under .vulnweave/ unless --no-save is used.");
   process.exit(0);
 }
 
@@ -76,6 +76,7 @@ const output = options.format === "summary" ? `${formatScanSummary(displayedReco
   : options.format === "priorities" ? formatPriorityTable(displayedRecord.findings, displayedAssessments)
   : options.format === "hotspots" ? formatHotspotTable(rankFileHotspots(symbols, imports).slice(0, options.top))
   : options.format === "changes" ? formatChangeImpact(changeImpact)
+  : options.format === "review" ? formatReviewPacket(displayedRecord, changeImpact, ownership, remediation, displayedAssessments)
   : options.format === "trend" ? formatScanTrend(trend)
   : options.format === "reachability" ? formatDependencyReachability(dependencyReachability.filter((assessment) => displayedRecord.findings.some((finding) => finding.id === assessment.findingId)))
   : options.format === "remediation" ? formatRemediationTable(displayedRecord.findings, displayedRemediation)
@@ -91,7 +92,7 @@ interface ParsedOptions {
   analyzer?: string;
   rootDir: string;
   semgrepConfig?: string;
-  format: "json" | "summary" | "table" | "graph" | "symbols" | "priorities" | "hotspots" | "changes" | "trend" | "reachability" | "remediation" | "ownership" | "explain" | "sarif" | "html";
+  format: "json" | "summary" | "table" | "graph" | "symbols" | "priorities" | "hotspots" | "changes" | "review" | "trend" | "reachability" | "remediation" | "ownership" | "explain" | "sarif" | "html";
   finding?: string;
   compare?: string;
   baseline?: string;
@@ -112,7 +113,7 @@ function parseOptions(values: string[]): ParsedOptions {
   let analyzer: string | undefined;
   let semgrepConfig: string | undefined;
   let rootDir: string | undefined;
-  let format: "json" | "summary" | "table" | "graph" | "symbols" | "priorities" | "hotspots" | "changes" | "trend" | "reachability" | "remediation" | "ownership" | "explain" | "sarif" | "html" = "json";
+  let format: "json" | "summary" | "table" | "graph" | "symbols" | "priorities" | "hotspots" | "changes" | "review" | "trend" | "reachability" | "remediation" | "ownership" | "explain" | "sarif" | "html" = "json";
   let finding: string | undefined;
   let baseline: string | undefined;
   let changedSince: string | undefined;
@@ -179,9 +180,9 @@ function requirePositiveInteger(value: string, option: string): number {
   return parsed;
 }
 
-function requireFormat(value: string): "json" | "summary" | "table" | "graph" | "symbols" | "priorities" | "hotspots" | "changes" | "trend" | "reachability" | "remediation" | "ownership" | "explain" | "sarif" | "html" {
-  if (value === "json" || value === "summary" || value === "table" || value === "graph" || value === "symbols" || value === "priorities" || value === "hotspots" || value === "changes" || value === "trend" || value === "reachability" || value === "remediation" || value === "ownership" || value === "explain" || value === "sarif" || value === "html") return value;
-  throw new Error("--format must be json, summary, table, graph, symbols, priorities, hotspots, changes, trend, reachability, remediation, ownership, explain, sarif, or html");
+function requireFormat(value: string): "json" | "summary" | "table" | "graph" | "symbols" | "priorities" | "hotspots" | "changes" | "review" | "trend" | "reachability" | "remediation" | "ownership" | "explain" | "sarif" | "html" {
+  if (value === "json" || value === "summary" || value === "table" || value === "graph" || value === "symbols" || value === "priorities" || value === "hotspots" || value === "changes" || value === "review" || value === "trend" || value === "reachability" || value === "remediation" || value === "ownership" || value === "explain" || value === "sarif" || value === "html") return value;
+  throw new Error("--format must be json, summary, table, graph, symbols, priorities, hotspots, changes, review, trend, reachability, remediation, ownership, explain, sarif, or html");
 }
 
 function formatSymbols(symbols: Awaited<ReturnType<typeof indexSymbols>>): string {
