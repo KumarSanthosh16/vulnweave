@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { resolve } from "node:path";
-import { AnalysisOrchestrator, analyzeChangeImpact, applySuppressions, assessDependencyReachability, assignFindingOwners, buildDependencyUpgradePlan, buildEvidenceGraph, buildRemediationAdvice, buildScanTrend, changedPaths, changedPathsSince, compareScanRecords, correlateFindings, evaluateAnalyzerHealth, evaluateGate, filterFindings, findingsInChangeScope, formatAnalyzerHealth, formatChangeImpact, formatDependencyReachability, formatDependencyUpgradePlan, formatFindingExplanation, formatFindingsTable, formatGateResult, formatGraphSummary, formatHotspotTable, formatOwnershipTable, formatPriorityTable, formatRemediationTable, formatReviewPacket, formatScanSummary, formatScanTrend, linkFindingsToSymbols, listScanRecords, loadCodeOwners, loadProjectConfig, loadScanRecord, rankFileHotspots, rankFindings, runAnalyzers, saveScanRecord, toHtmlReport, toSarif, type FindingCategory, type FindingSuppression, type Severity } from "@vulnweave/core";
+import { AnalysisOrchestrator, analyzeChangeImpact, applySuppressions, assessDependencyReachability, assignFindingOwners, buildDependencyUpgradePlan, buildEvidenceGraph, buildRemediationAdvice, buildScanTrend, changedPaths, changedPathsSince, compareScanRecords, correlateFindings, evaluateAnalyzerHealth, evaluateGate, filterFindings, findingsInChangeScope, formatAnalyzerHealth, formatChangeImpact, formatDependencyReachability, formatDependencyUpgradePlan, formatFindingExplanation, formatFindingsTable, formatGateResult, formatGraphSummary, formatHotspotTable, formatOwnershipTable, formatPriorityTable, formatRemediationTable, formatReviewPacket, formatScanSummary, formatScanTrend, linkFindingsToSymbols, listScanRecords, loadBaselinePolicy, loadCodeOwners, loadProjectConfig, loadScanRecord, rankFileHotspots, rankFindings, runAnalyzers, saveScanRecord, toHtmlReport, toSarif, type FindingCategory, type FindingSuppression, type Severity } from "@vulnweave/core";
 import { GitleaksAnalyzer } from "@vulnweave/gitleaks-analyzer";
 import { MockAnalyzer } from "@vulnweave/mock-analyzer";
 import { OsvAnalyzer } from "@vulnweave/osv-analyzer";
@@ -169,13 +169,14 @@ function parseOptions(values: string[]): ParsedOptions {
 
 async function resolveOptions(parsed: ParsedOptions): Promise<ResolvedOptions> {
   const config = await loadProjectConfig(parsed.rootDir);
+  const baselinePolicy = await loadBaselinePolicy(parsed.rootDir, config?.baselinePolicy ?? "vulnweave.baseline.json");
   return {
     ...parsed,
     analyzer: parsed.analyzer ?? config?.analyzer ?? "mock",
     semgrepConfig: [...(parsed.semgrepConfig ?? (config?.semgrepConfig ? [resolve(parsed.rootDir, config.semgrepConfig)] : [])), ...parsed.semgrepPacks.map((pack) => resolve(parsed.rootDir, "rules", "packs", `${pack}.yml`))],
-    failOn: parsed.failOn ?? config?.failOn,
-    requireAnalyzers: parsed.requireAnalyzers || (parsed.analyzer === undefined && config?.requireAnalyzers === true),
-    suppressions: config?.suppressions ?? []
+    failOn: parsed.failOn ?? config?.failOn ?? baselinePolicy?.failOn,
+    requireAnalyzers: parsed.requireAnalyzers || (parsed.analyzer === undefined && (config?.requireAnalyzers === true || baselinePolicy?.requireAnalyzers === true)),
+    suppressions: [...(baselinePolicy?.suppressions ?? []), ...(config?.suppressions ?? [])]
   };
 }
 

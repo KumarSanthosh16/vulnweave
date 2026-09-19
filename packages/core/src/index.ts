@@ -1,4 +1,5 @@
 export * from "./adapter.js";
+export * from "./baseline-policy.js";
 export * from "./analyzer-health.js";
 export * from "./batch-orchestrator.js";
 export * from "./code-symbols.js";

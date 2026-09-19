@@ -74,11 +74,22 @@ Run the available real analyzers together with `pnpm cli -- . --analyzer all --s
 
 ## Project policy
 
-`vulnweave.config.json` is a versioned, committed policy file. This repository configures all local analyzers, the starter Semgrep rules, a high-severity gate, and required analyzer health. With that file in a scanned repository, `pnpm cli -- . --format summary` uses those defaults; an explicitly supplied CLI option takes precedence. Keep local state and reports under `.vulnweave/`, not in this policy file.
+`vulnweave.config.json` is a versioned, committed scan configuration. It selects analyzers, rules, and the baseline policy file. `vulnweave.baseline.json` is the separate reviewable risk policy: it holds the gate threshold, analyzer-health requirement, and approved exceptions. With both files committed, `pnpm cli -- . --format summary` uses those defaults; an explicitly supplied CLI option takes precedence. Keep local state and reports under `.vulnweave/`, not in either policy file.
+
+The included baseline starts with a high-severity gate and requires all selected analyzers to complete:
+
+```json
+{
+  "schemaVersion": 1,
+  "failOn": "high",
+  "requireAnalyzers": true,
+  "suppressions": []
+}
+```
 
 ### Time-bounded suppressions
 
-Use a suppression only for an explicitly reviewed finding fingerprint. Every entry requires a reason, an owner, and an expiry date. An active suppression remains visible in JSON, tables, graphs, and scan history, but is excluded from the severity gate; after its expiry date, it automatically becomes gate-eligible again.
+Use a suppression only for an explicitly reviewed finding fingerprint, in `vulnweave.baseline.json`. Every entry requires a reason, an owner, and an expiry date. An active suppression remains visible in JSON, tables, graphs, and scan history, but is excluded from the severity gate; after its expiry date, it automatically becomes gate-eligible again.
 
 ```json
 {
