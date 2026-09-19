@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: read
+  actions: read
+  security-events: write
 
 jobs:
   analyze:
@@ -59,6 +61,15 @@ jobs:
       - name: Export SARIF
         if: always()
         run: node packages/cli/dist/index.js . --format sarif > vulnweave.sarif
+      # Code Scanning must be enabled before private repositories can accept SARIF.
+      # Keep the local artifact even when this optional GitHub integration is unavailable.
+      - name: Publish SARIF to GitHub Code Scanning
+        if: always()
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: vulnweave.sarif
+          category: vulnweave
       - name: Upload SARIF artifact
         if: always()
         uses: actions/upload-artifact@v4
