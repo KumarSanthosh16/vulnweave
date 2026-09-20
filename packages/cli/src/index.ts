@@ -8,6 +8,7 @@ import { SemgrepAnalyzer } from "@vulnweave/semgrep-analyzer";
 import { indexDependencyUsages, indexImports, indexSymbols } from "@vulnweave/tree-sitter-indexer";
 import { TrivyAnalyzer } from "@vulnweave/trivy-analyzer";
 import { expandFriendlyCommand, friendlyCommandHelp } from "./friendly-commands.js";
+import { formatInitialization, initializeProject } from "./onboarding.js";
 
 const args = expandFriendlyCommand(process.argv.slice(2));
 if (args.includes("--version") || args.includes("-V")) {
@@ -16,7 +17,14 @@ if (args.includes("--version") || args.includes("-V")) {
   process.exit(0);
 }
 if (args.includes("--help") || args.includes("-h")) {
-  console.log(`${friendlyCommandHelp}\n\nAdvanced usage:\n  vulnweave [path] [--analyzer all|mock|gitleaks|osv|semgrep|trivy] [--semgrep-config rules.yml] [--semgrep-pack typescript-security|typescript-quality] [--format json|summary|table|graph|symbols|priorities|hotspots|changes|review|trend|reachability|upgrades|remediation|ownership|explain|sarif|html] [--history N] [--changed-since git-ref] [--review-changes] [--finding id] [--severity level] [--category type] [--filter-analyzer id] [--include-tests] [--top N] [--baseline latest|run-id] [--fail-on info|low|medium|high|critical] [--require-analyzers] [--compare latest|run-id] [--no-save] [--version]\n\nResults are saved locally under .vulnweave/ unless --no-save is used.`);
+  console.log(`${friendlyCommandHelp}\n\nAdvanced usage:\n  vulnweave [path] [--analyzer all|mock|gitleaks|osv|semgrep|trivy] [--gitleaks-config rules.toml] [--semgrep-config rules.yml] [--semgrep-pack typescript-security|typescript-quality] [--format json|summary|table|graph|symbols|priorities|hotspots|changes|review|trend|reachability|upgrades|remediation|ownership|explain|sarif|html] [--history N] [--changed-since git-ref] [--review-changes] [--finding id] [--severity level] [--category type] [--filter-analyzer id] [--include-tests] [--top N] [--baseline latest|run-id] [--fail-on info|low|medium|high|critical] [--require-analyzers] [--compare latest|run-id] [--no-save] [--version]\n\nResults are saved locally under .vulnweave/ unless --no-save is used.`);
+  process.exit(0);
+}
+if (args.includes("--init")) {
+  const paths = args.filter((value) => value !== "--init" && value !== "--");
+  if (paths.length > 1 || paths.some((value) => value.startsWith("-"))) throw new Error("init accepts at most one project path");
+  const invocationDir = process.env.INIT_CWD ?? process.cwd();
+  console.log(formatInitialization(await initializeProject(resolve(invocationDir, paths[0] ?? "."))));
   process.exit(0);
 }
 
@@ -31,7 +39,7 @@ if (!adapter && options.analyzer !== "all") throw new Error(`Unknown analyzer '$
 const previous = options.compare ? await loadScanRecord(options.rootDir, options.compare) : undefined;
 const baseline = options.baseline ? await loadScanRecord(options.rootDir, options.baseline) : undefined;
 const startedAt = new Date().toISOString();
-const request = { rootDir: options.rootDir, config: { semgrepConfig: options.semgrepConfig } };
+const request = { rootDir: options.rootDir, config: { semgrepConfig: options.semgrepConfig, gitleaksConfig: options.gitleaksConfig } };
 const batch = options.analyzer === "all"
   ? await runAnalyzers([new GitleaksAnalyzer(), new OsvAnalyzer(), new SemgrepAnalyzer(), new TrivyAnalyzer()], request)
   : undefined;
@@ -99,6 +107,7 @@ if (!gate.passed || !analyzerHealth.passed) process.exitCode = 1;
 interface ParsedOptions {
   analyzer?: string;
   rootDir: string;
+  gitleaksConfig?: string;
   semgrepConfig?: string[];
   semgrepPacks: SemgrepPack[];
   format: "json" | "summary" | "table" | "graph" | "symbols" | "priorities" | "hotspots" | "changes" | "review" | "trend" | "reachability" | "upgrades" | "remediation" | "ownership" | "explain" | "sarif" | "html";
@@ -120,6 +129,7 @@ interface ResolvedOptions extends Omit<ParsedOptions, "analyzer"> { analyzer: st
 
 function parseOptions(values: string[]): ParsedOptions {
   let analyzer: string | undefined;
+  let gitleaksConfig: string | undefined;
   const semgrepConfig: string[] = [];
   const semgrepPacks: SemgrepPack[] = [];
   let rootDir: string | undefined;
@@ -144,6 +154,7 @@ function parseOptions(values: string[]): ParsedOptions {
     if (value === undefined) break;
     if (value === "--") continue;
     if (value === "--analyzer") { analyzer = requireValue(values, ++index, "--analyzer"); continue; }
+    if (value === "--gitleaks-config") { gitleaksConfig = resolve(invocationDir, requireValue(values, ++index, "--gitleaks-config")); continue; }
     if (value === "--semgrep-config") { semgrepConfig.push(requireValue(values, ++index, "--semgrep-config")); continue; }
     if (value === "--semgrep-pack") { semgrepPacks.push(requireSemgrepPack(requireValue(values, ++index, "--semgrep-pack"))); continue; }
     if (value === "--format") { format = requireFormat(requireValue(values, ++index, "--format")); continue; }
@@ -166,7 +177,7 @@ function parseOptions(values: string[]): ParsedOptions {
     rootDir = resolve(invocationDir, value);
   }
   return {
-    analyzer,
+    analyzer, gitleaksConfig,
     rootDir: rootDir ?? invocationDir,
     semgrepConfig: semgrepConfig.length > 0 ? semgrepConfig.map((path) => resolve(invocationDir, path)) : undefined,
     semgrepPacks, format, finding, compare, baseline, changedSince, reviewChanges, failOn, requireAnalyzers, save, includeTests, top, history, filters
@@ -179,6 +190,7 @@ async function resolveOptions(parsed: ParsedOptions): Promise<ResolvedOptions> {
   return {
     ...parsed,
     analyzer: parsed.analyzer ?? config?.analyzer ?? "mock",
+    gitleaksConfig: parsed.gitleaksConfig ?? (config?.gitleaksConfig ? resolve(parsed.rootDir, config.gitleaksConfig) : undefined),
     semgrepConfig: [...(parsed.semgrepConfig ?? (config?.semgrepConfig ? [resolve(parsed.rootDir, config.semgrepConfig)] : [])), ...parsed.semgrepPacks.map((pack) => resolve(parsed.rootDir, "rules", "packs", `${pack}.yml`))],
     failOn: parsed.failOn ?? config?.failOn ?? baselinePolicy?.failOn,
     requireAnalyzers: parsed.requireAnalyzers || (parsed.analyzer === undefined && (config?.requireAnalyzers === true || baselinePolicy?.requireAnalyzers === true)),

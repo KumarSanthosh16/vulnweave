@@ -10,6 +10,7 @@ export interface VulnWeaveProjectConfig {
   schemaVersion: 1;
   analyzer?: ConfiguredAnalyzer;
   semgrepConfig?: string;
+  gitleaksConfig?: string;
   baselinePolicy?: string;
   failOn?: Severity;
   requireAnalyzers?: boolean;
@@ -33,6 +34,7 @@ export function validateProjectConfig(value: unknown): VulnWeaveProjectConfig {
     throw new Error("analyzer must be all, mock, gitleaks, osv, semgrep, or trivy");
   }
   if (value.semgrepConfig !== undefined && typeof value.semgrepConfig !== "string") throw new Error("semgrepConfig must be a string");
+  if (value.gitleaksConfig !== undefined && typeof value.gitleaksConfig !== "string") throw new Error("gitleaksConfig must be a string");
   if (value.baselinePolicy !== undefined && typeof value.baselinePolicy !== "string") throw new Error("baselinePolicy must be a string");
   if (value.failOn !== undefined && !["critical", "high", "medium", "low", "info"].includes(stringValue(value.failOn))) {
     throw new Error("failOn must be critical, high, medium, low, or info");
@@ -43,6 +45,7 @@ export function validateProjectConfig(value: unknown): VulnWeaveProjectConfig {
     schemaVersion: 1,
     ...(typeof value.analyzer === "string" ? { analyzer: value.analyzer as ConfiguredAnalyzer } : {}),
     ...(typeof value.semgrepConfig === "string" ? { semgrepConfig: value.semgrepConfig } : {}),
+    ...(typeof value.gitleaksConfig === "string" ? { gitleaksConfig: value.gitleaksConfig } : {}),
     ...(typeof value.baselinePolicy === "string" ? { baselinePolicy: value.baselinePolicy } : {}),
     ...(typeof value.failOn === "string" ? { failOn: value.failOn as Severity } : {}),
     ...(typeof value.requireAnalyzers === "boolean" ? { requireAnalyzers: value.requireAnalyzers } : {}),

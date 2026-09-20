@@ -1,6 +1,6 @@
-export type FriendlyCommand = "scan" | "report" | "findings" | "priorities" | "review" | "ci" | "history" | "doctor";
+export type FriendlyCommand = "init" | "scan" | "report" | "findings" | "priorities" | "review" | "ci" | "history" | "doctor";
 
-const commands = new Set<FriendlyCommand>(["scan", "report", "findings", "priorities", "review", "ci", "history", "doctor"]);
+const commands = new Set<FriendlyCommand>(["init", "scan", "report", "findings", "priorities", "review", "ci", "history", "doctor"]);
 
 /** Converts the compact public commands into the existing flag-based CLI contract. */
 export function expandFriendlyCommand(values: string[]): string[] {
@@ -8,6 +8,7 @@ export function expandFriendlyCommand(values: string[]): string[] {
   const command = values[0];
   if (!command || !commands.has(command as FriendlyCommand)) return values;
   const rest = values.slice(1);
+  if (command === "init") return ["--init", ...rest];
   if (command === "doctor") return ["--version"];
   if (command === "scan") return [...rest, "--format", "summary"];
   if (command === "report") return [...rest, "--format", "html"];
@@ -32,6 +33,7 @@ export function expandFriendlyCommand(values: string[]): string[] {
 }
 
 export const friendlyCommandHelp = `Friendly commands:
+  vulnweave init [path]                 Create safe starter policy files
   vulnweave scan [path]                 Scan with project defaults
   vulnweave report [path]               Print a self-contained HTML report
   vulnweave findings [path]             List findings as a table

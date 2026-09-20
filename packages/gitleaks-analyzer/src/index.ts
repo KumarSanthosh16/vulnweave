@@ -43,10 +43,7 @@ export class GitleaksAnalyzer implements AnalyzerAdapter {
     const reportPath = join(reportDir, "report.json");
     try {
       try {
-        await execFile("gitleaks", [
-          "detect", "--no-banner", "--source", request.rootDir,
-          "--report-format", "json", "--report-path", reportPath
-        ]);
+        await execFile("gitleaks", gitleaksArguments(request.rootDir, reportPath, request.config?.gitleaksConfig));
       } catch (error) {
         // Gitleaks exits with status 1 when it found leaks; that is a successful scan.
         if (!(isExitCode(error, 1))) throw error;
@@ -57,6 +54,14 @@ export class GitleaksAnalyzer implements AnalyzerAdapter {
       await rm(reportDir, { recursive: true, force: true });
     }
   }
+}
+
+export function gitleaksArguments(rootDir: string, reportPath: string, configPath: unknown): string[] {
+  return [
+    "detect", "--no-banner", "--source", rootDir,
+    ...(typeof configPath === "string" && configPath.length > 0 ? ["--config", configPath] : []),
+    "--report-format", "json", "--report-path", reportPath
+  ];
 }
 
 function isExitCode(error: unknown, expected: number): boolean {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseGitleaksReport } from "./index.js";
+import { gitleaksArguments, parseGitleaksReport } from "./index.js";
 
 test("normalizes Gitleaks output without retaining matched secret text", () => {
   const [finding] = parseGitleaksReport([{
@@ -13,4 +13,9 @@ test("normalizes Gitleaks output without retaining matched secret text", () => {
   assert.deepEqual(finding?.location, { path: "src/config.ts", startLine: 7, startColumn: 18, endLine: 7, endColumn: 42 });
   assert.equal(JSON.stringify(finding).includes("super-secret-value"), false);
   assert.deepEqual(finding?.metadata, { tags: "key,api" });
+});
+
+test("passes an explicit custom Gitleaks configuration only when configured", () => {
+  assert.deepEqual(gitleaksArguments("project", "report.json", "rules/gitleaks.toml"), ["detect", "--no-banner", "--source", "project", "--config", "rules/gitleaks.toml", "--report-format", "json", "--report-path", "report.json"]);
+  assert.equal(gitleaksArguments("project", "report.json", undefined).includes("--config"), false);
 });

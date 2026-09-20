@@ -16,4 +16,5 @@ test("expands review base reference and CI health requirements", () => {
 test("leaves advanced commands untouched and maps doctor to version", () => {
   assert.deepEqual(expandFriendlyCommand([".", "--format", "sarif"]), [".", "--format", "sarif"]);
   assert.deepEqual(expandFriendlyCommand(["doctor"]), ["--version"]);
+  assert.deepEqual(expandFriendlyCommand(["init", "."]), ["--init", "."]);
 });

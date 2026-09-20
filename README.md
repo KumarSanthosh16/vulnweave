@@ -34,6 +34,7 @@ This repository is currently run from a source checkout. Install the required sc
 
 ```bash
 pnpm install
+pnpm cli -- init .
 pnpm cli -- doctor
 pnpm cli -- scan .
 pnpm cli -- findings .
@@ -41,6 +42,8 @@ pnpm cli -- report . > vulnweave-report.html
 ```
 
 Open `vulnweave-report.html` locally to view the dashboard. The project configuration (`vulnweave.config.json`) selects the analyzers and rules; `vulnweave.baseline.json` defines the reviewable gate policy. Scan history is stored locally in `.vulnweave/` and is ignored by Git.
+
+`init` never overwrites existing policy files. It creates a starter configuration, a High-severity baseline policy, and a small Semgrep rule file for projects that do not already have them. Review these files before committing them to a repository.
 
 For continuous integration, use:
 
@@ -124,9 +127,21 @@ pnpm cli -- doctor
 
 `report` writes HTML to standard output so it can be saved without a server: `pnpm cli -- report . > vulnweave-report.html`. The existing flag-based interface remains available for scripting, filtering, and scanner-specific options.
 
+For custom Gitleaks rules, prefer a portable project setting in `vulnweave.config.json`:
+
+```json
+{ "gitleaksConfig": ".gitleaks.toml" }
+```
+
+For a one-off scan, use `pnpm cli -- scan . --gitleaks-config .gitleaks.toml`.
+
 ## Project policy
 
 `vulnweave.config.json` is a versioned, committed scan configuration. It selects analyzers, rules, and the baseline policy file. `vulnweave.baseline.json` is the separate reviewable risk policy: it holds the gate threshold, analyzer-health requirement, and approved exceptions. With both files committed, `pnpm cli -- . --format summary` uses those defaults; an explicitly supplied CLI option takes precedence. Keep local state and reports under `.vulnweave/`, not in either policy file.
+
+## Third-party licensing
+
+VulnWeave invokes Gitleaks, Semgrep Community Edition, OSV-Scanner, and Trivy as separately installed local tools. It does not bundle their binaries. Their licenses and the direct runtime/development dependency inventory are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Before publishing a release, select a license for VulnWeave itself and complete a distribution-specific legal review.
 
 The included baseline starts with a high-severity gate and requires all selected analyzers to complete:
 

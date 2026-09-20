@@ -1,0 +1,10 @@
+rules:
+  - id: vulnweave.security.no-eval
+    message: Avoid eval: executing dynamic input can create a code-injection risk.
+    languages: [javascript, typescript]
+    severity: ERROR
+    metadata:
+      category: security
+      technology: [javascript, typescript]
+    patterns:
+      - pattern: eval(...)
