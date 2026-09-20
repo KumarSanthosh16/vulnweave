@@ -1,24 +1,54 @@
 # VulnWeave
 
-VulnWeave is a local-first code quality and security product that turns tool output into durable, explainable evidence and eventually into impact-aware reasoning. This repository establishes the internal boundary before scanner integrations are added.
+VulnWeave is a local-first security and code-impact analysis tool. It runs trusted open-source scanners against a repository, combines their results into one consistent view, removes duplicate dependency alerts, and helps developers decide what needs attention first.
 
-## What works now
+It is designed for developers who want useful security feedback without sending source code or scan history to a hosted service. Scan data stays on the local machine unless you explicitly export it.
 
-The runnable CLI drives a deterministic mock analyzer through the complete core pipeline:
+## Why use VulnWeave?
 
-```text
-Analyzer Adapter → Orchestrator → normalized Finding + Evidence → JSON CLI output
-```
+Security scanners are valuable, but their output is often fragmented: one tool detects secrets, another finds vulnerable packages, another flags risky code, and each uses a different report format. VulnWeave is the evidence and workflow layer above those scanners.
 
-Run it after installing dependencies:
+It answers practical questions:
+
+- What issues were found across all scanners?
+- Which reports describe the same dependency vulnerability?
+- Is this issue new, or is it already an accepted baseline issue?
+- Which findings are highest priority based on local code and dependency evidence?
+- Can this change pass a security gate in CI?
+
+VulnWeave does not replace security review, penetration testing, or the scanners it runs. It does not automatically change code, dependencies, or credentials. Its dependency usage result only reports observed static JavaScript/TypeScript imports; it never claims a package is runtime-safe or unreachable.
+
+## What it does today
+
+- Runs Gitleaks, Semgrep, OSV-Scanner, and Trivy locally.
+- Normalizes results into one portable finding and evidence schema.
+- Correlates overlapping OSV and Trivy dependency advisories into canonical issues.
+- Produces terminal views, JSON, SARIF, and a self-contained HTML report.
+- Enforces severity and analyzer-health gates for local use and CI.
+- Supports baseline-aware scans, local history, trends, and reviewed suppressions.
+- Builds local evidence graphs, code-symbol links, dependency import observations, priority rankings, remediation advice, upgrade plans, ownership routing, and changed-code review context.
+
+## Quick start
+
+This repository is currently run from a source checkout. Install the required scanner binaries—Gitleaks, Semgrep, OSV-Scanner, and Trivy—then install the workspace dependencies:
 
 ```bash
 pnpm install
-pnpm test
-pnpm cli
+pnpm cli -- doctor
+pnpm cli -- scan .
+pnpm cli -- findings .
+pnpm cli -- report . > vulnweave-report.html
 ```
 
-Pass a repository path with `pnpm cli -- /path/to/repository`. The mock is intentional: it verifies contracts and developer workflow without requiring an external binary, credentials, or a source checkout.
+Open `vulnweave-report.html` locally to view the dashboard. The project configuration (`vulnweave.config.json`) selects the analyzers and rules; `vulnweave.baseline.json` defines the reviewable gate policy. Scan history is stored locally in `.vulnweave/` and is ignored by Git.
+
+For continuous integration, use:
+
+```bash
+pnpm cli -- ci .
+```
+
+The command exits unsuccessfully when findings violate the configured policy or a required analyzer is unavailable. That is intended behavior for a security gate.
 
 ## Structure
 
@@ -41,9 +71,11 @@ Every `Finding` has an analyzer, rule ID, category, severity, human-readable exp
 
 The `AnalysisOrchestrator` moves one run through `idle → preparing → running → normalizing → completed`, with explicit `failed` and `cancelled` terminal states. It is intentionally small today; future queueing, caching, progress events, cancellation signals, and multi-analyzer aggregation belong here rather than in adapters.
 
-## MVP direction
+## Scanner support and architecture
 
-The real adapters are Gitleaks (secrets), Semgrep CE (source patterns), OSV-Scanner (dependency vulnerabilities), and Trivy (filesystem dependencies and configuration). Run `pnpm cli -- . --analyzer gitleaks` after installing [Gitleaks](https://github.com/gitleaks/gitleaks); matched secret text is deliberately excluded from the normalized result. Semgrep uses an explicit local rules file: `pnpm cli -- . --analyzer semgrep --semgrep-config rules/semgrep-starter.yml`. This repository includes that small starter policy, which flags JavaScript/TypeScript `eval` usage. Run `pnpm cli -- . --analyzer osv` after installing [OSV-Scanner](https://google.github.io/osv-scanner/installation/). OSV-Scanner examines local manifests and lockfiles, then queries the OSV vulnerability database for advisories. Run `pnpm cli -- . --analyzer trivy --format summary` after installing [Trivy](https://trivy.dev/latest/docs/); it enables Trivy's vulnerability and misconfiguration scanners, while Gitleaks remains the dedicated secret scanner. Trivy may overlap OSV on dependency advisories; that is intentional for now, because its configuration coverage adds a distinct evidence source. Each analyzer remains a replaceable worker; their outputs converge on the same schema, then feed a future evidence graph that connects findings to symbols, files, dependencies, owners, and change impact.
+The current adapters are Gitleaks (secrets), Semgrep CE (source patterns), OSV-Scanner (dependency vulnerabilities), and Trivy (filesystem dependencies and configuration). Run `pnpm cli -- doctor` to confirm their availability. Matched secret text is deliberately excluded from normalized results. Semgrep uses local rules; this repository includes `rules/semgrep-starter.yml`, which flags JavaScript/TypeScript `eval` usage. Trivy may overlap OSV on dependency advisories; VulnWeave intentionally keeps their evidence, then correlates the duplicate advisory into one canonical issue.
+
+Each analyzer remains a replaceable worker. Its output converges on the same schema and evidence graph, connecting findings to symbols, files, dependencies, owners, and change impact. This makes the results explainable and creates a safe foundation for later AI-assisted explanation features: any future AI output must cite the scanner evidence rather than invent security claims.
 
 ### Optional local policy packs
 
@@ -75,6 +107,22 @@ Run the available real analyzers together with `pnpm cli -- . --analyzer all --s
 ## Installation diagnostics
 
 Run `pnpm cli -- --version` to show the VulnWeave version and whether Gitleaks, Semgrep, OSV-Scanner, and Trivy are installed. This is read-only and does not scan the current project.
+
+## Friendly commands
+
+For everyday use, the CLI provides compact commands that use your committed project configuration:
+
+```bash
+pnpm cli -- scan .
+pnpm cli -- findings .
+pnpm cli -- priorities .
+pnpm cli -- history .
+pnpm cli -- review . --base main
+pnpm cli -- ci .
+pnpm cli -- doctor
+```
+
+`report` writes HTML to standard output so it can be saved without a server: `pnpm cli -- report . > vulnweave-report.html`. The existing flag-based interface remains available for scripting, filtering, and scanner-specific options.
 
 ## Project policy
 
