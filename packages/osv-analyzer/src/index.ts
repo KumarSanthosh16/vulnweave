@@ -4,6 +4,8 @@ import type { AnalyzerAdapter, AnalysisRequest, FindingInput, Severity } from "@
 
 const execFile = promisify(executeFile);
 
+export type OsvCommandRunner = (args: string[]) => Promise<string>;
+
 export interface OsvVulnerability {
   id: string;
   summary?: string;
@@ -25,16 +27,34 @@ export class OsvAnalyzer implements AnalyzerAdapter {
   readonly id = "osv";
   readonly displayName = "OSV-Scanner";
 
+  constructor(private readonly runCommand: OsvCommandRunner = runOsvCommand) {}
+
   async isAvailable(): Promise<boolean> {
     try { await execFile("osv-scanner", ["--version"]); return true; } catch { return false; }
   }
 
   async analyze(request: AnalysisRequest): Promise<FindingInput[]> {
-    const { stdout } = await execFile("osv-scanner", [
-      "scan", "source", "--format", "json", "--recursive", request.rootDir
-    ], { maxBuffer: 20 * 1024 * 1024 });
-    return parseOsvReport(JSON.parse(stdout) as OsvReport);
+    const args = ["scan", "source", "--format", "json", "--recursive", request.rootDir];
+    try {
+      return parseOsvReport(JSON.parse(await this.runCommand(args)) as OsvReport);
+    } catch (error) {
+      // OSV-Scanner exits 1 when it found vulnerable packages. Its JSON output
+      // remains a successful scan result, not an unavailable analyzer.
+      const stdout = outputFromFindingExit(error);
+      if (stdout === undefined) throw error;
+      return parseOsvReport(JSON.parse(stdout) as OsvReport);
+    }
   }
+}
+
+async function runOsvCommand(args: string[]): Promise<string> {
+  const { stdout } = await execFile("osv-scanner", args, { maxBuffer: 20 * 1024 * 1024 });
+  return stdout;
+}
+
+function outputFromFindingExit(error: unknown): string | undefined {
+  if (typeof error !== "object" || error === null || !("code" in error) || error.code !== 1 || !("stdout" in error)) return undefined;
+  return typeof error.stdout === "string" ? error.stdout : undefined;
 }
 
 /** Normalizes OSV's package-centric report into one finding per affected package/advisory. */
