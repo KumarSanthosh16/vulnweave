@@ -1,5 +1,7 @@
 # VulnWeave
 
+Licensed under the [Apache License 2.0](LICENSE). The local CLI and core are open source; any future hosted or enterprise products may be offered under separate commercial terms.
+
 VulnWeave is a local-first security and code-impact analysis tool. It runs trusted open-source scanners against a repository, combines their results into one consistent view, removes duplicate dependency alerts, and helps developers decide what needs attention first.
 
 It is designed for developers who want useful security feedback without sending source code or scan history to a hosted service. Scan data stays on the local machine unless you explicitly export it.
@@ -141,7 +143,7 @@ For a one-off scan, use `pnpm cli -- scan . --gitleaks-config .gitleaks.toml`.
 
 ## Third-party licensing
 
-VulnWeave invokes Gitleaks, Semgrep Community Edition, OSV-Scanner, and Trivy as separately installed local tools. It does not bundle their binaries. Their licenses and the direct runtime/development dependency inventory are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Before publishing a release, select a license for VulnWeave itself and complete a distribution-specific legal review.
+VulnWeave Core is licensed under Apache-2.0. It invokes Gitleaks, Semgrep Community Edition, OSV-Scanner, and Trivy as separately installed local tools and does not bundle their binaries. Their licenses and the direct runtime/development dependency inventory are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Any future hosted or enterprise offering will be governed by separate commercial terms and must keep a clear boundary from Apache-2.0 core code.
 
 The included baseline starts with a high-severity gate and requires all selected analyzers to complete:
 
