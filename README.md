@@ -29,6 +29,7 @@ VulnWeave does not replace security review, penetration testing, or the scanners
 - Enforces severity and analyzer-health gates for local use and CI.
 - Supports baseline-aware scans, local history, trends, and reviewed suppressions.
 - Builds local evidence graphs, code-symbol links, dependency import observations, priority rankings, remediation advice, upgrade plans, ownership routing, and changed-code review context.
+- Flags repeated six-line source blocks and functions with a high branch-complexity signal as advisory code-quality feedback.
 
 ## Quick start
 
@@ -40,6 +41,7 @@ pnpm cli -- init .
 pnpm cli -- doctor
 pnpm cli -- scan .
 pnpm cli -- findings .
+pnpm cli -- quality .
 pnpm cli -- report . > vulnweave-report.html
 ```
 
@@ -128,6 +130,21 @@ pnpm cli -- doctor
 ```
 
 `report` writes HTML to standard output so it can be saved without a server: `pnpm cli -- report . > vulnweave-report.html`. The existing flag-based interface remains available for scripting, filtering, and scanner-specific options.
+
+`quality` is advisory-only: it reports normalized repeated six-line code blocks, functions with a simple cyclomatic-complexity signal of 10 or above, and non-entry source files with no observed local static import. An unreferenced-file signal is not proof that code is dead: dynamic imports, framework routing, generated code, and other packages may still consume it. Quality signals do not alter the security gate.
+
+Tune the advisory thresholds in `vulnweave.config.json` when a project needs a different standard:
+
+```json
+{
+  "quality": {
+    "complexityThreshold": 12,
+    "duplicateBlockLines": 8
+  }
+}
+```
+
+Quality signals are saved with scans and appear in the HTML report, but remain separate from security findings and gates.
 
 For custom Gitleaks rules, prefer a portable project setting in `vulnweave.config.json`:
 

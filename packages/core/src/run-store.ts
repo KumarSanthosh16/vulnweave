@@ -14,6 +14,8 @@ import type { ChangeImpact } from "./impact-surface.js";
 import type { RemediationAdvice } from "./remediation.js";
 import type { FindingOwnership } from "./ownership.js";
 import type { DependencyUpgradePlan } from "./upgrade-plan.js";
+import type { QualitySignal } from "./code-quality.js";
+import type { QualityGateResult } from "./quality-gate.js";
 
 export interface ScanRecord {
   schemaVersion: 1;
@@ -40,6 +42,8 @@ export interface ScanRecord {
   analyzerHealth?: AnalyzerHealthResult;
   suppressions?: AppliedSuppression[];
   changeImpact?: ChangeImpact;
+  qualitySignals?: QualitySignal[];
+  qualityGate?: QualityGateResult;
 }
 
 export interface RunComparison {

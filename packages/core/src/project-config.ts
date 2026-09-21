@@ -1,6 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Severity } from "./schemas.js";
+import type { QualityOptions } from "./code-quality.js";
+import type { QualityGatePolicy } from "./quality-gate.js";
 import type { FindingSuppression } from "./suppressions.js";
 
 export type ConfiguredAnalyzer = "all" | "mock" | "gitleaks" | "osv" | "semgrep" | "trivy";
@@ -14,6 +16,8 @@ export interface VulnWeaveProjectConfig {
   baselinePolicy?: string;
   failOn?: Severity;
   requireAnalyzers?: boolean;
+  quality?: QualityOptions;
+  qualityGate?: QualityGatePolicy;
   suppressions?: FindingSuppression[];
 }
 
@@ -40,6 +44,8 @@ export function validateProjectConfig(value: unknown): VulnWeaveProjectConfig {
     throw new Error("failOn must be critical, high, medium, low, or info");
   }
   if (value.requireAnalyzers !== undefined && typeof value.requireAnalyzers !== "boolean") throw new Error("requireAnalyzers must be a boolean");
+  if (value.quality !== undefined) validateQuality(value.quality);
+  if (value.qualityGate !== undefined) validateQualityGate(value.qualityGate);
   if (value.suppressions !== undefined) validateSuppressions(value.suppressions);
   return {
     schemaVersion: 1,
@@ -49,8 +55,26 @@ export function validateProjectConfig(value: unknown): VulnWeaveProjectConfig {
     ...(typeof value.baselinePolicy === "string" ? { baselinePolicy: value.baselinePolicy } : {}),
     ...(typeof value.failOn === "string" ? { failOn: value.failOn as Severity } : {}),
     ...(typeof value.requireAnalyzers === "boolean" ? { requireAnalyzers: value.requireAnalyzers } : {}),
+    ...(isRecord(value.quality) ? { quality: value.quality as QualityOptions } : {}),
+    ...(isRecord(value.qualityGate) ? { qualityGate: value.qualityGate as QualityGatePolicy } : {}),
     ...(Array.isArray(value.suppressions) ? { suppressions: value.suppressions as FindingSuppression[] } : {})
   };
+}
+
+function validateQuality(value: unknown): void {
+  if (!isRecord(value)) throw new Error("quality must be an object");
+  for (const key of ["complexityThreshold", "duplicateBlockLines", "nestingThreshold", "functionLineThreshold", "parameterThreshold"] as const) {
+    const threshold = value[key];
+    if (threshold !== undefined && (typeof threshold !== "number" || !Number.isInteger(threshold) || threshold < 2)) throw new Error(`quality.${key} must be an integer of at least 2`);
+  }
+}
+
+function validateQualityGate(value: unknown): void {
+  if (!isRecord(value)) throw new Error("qualityGate must be an object");
+  for (const key of ["maxComplexitySignals", "maxDuplicateCodeSignals", "maxUnreferencedFiles"]) {
+    const limit = value[key];
+    if (limit !== undefined && (typeof limit !== "number" || !Number.isInteger(limit) || limit < 0)) throw new Error(`qualityGate.${key} must be a non-negative integer`);
+  }
 }
 
 function validateSuppressions(value: unknown): void {

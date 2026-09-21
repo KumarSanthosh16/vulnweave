@@ -1,6 +1,6 @@
-export type FriendlyCommand = "init" | "scan" | "report" | "findings" | "priorities" | "review" | "ci" | "history" | "doctor";
+export type FriendlyCommand = "init" | "scan" | "report" | "findings" | "quality" | "priorities" | "review" | "ci" | "history" | "doctor";
 
-const commands = new Set<FriendlyCommand>(["init", "scan", "report", "findings", "priorities", "review", "ci", "history", "doctor"]);
+const commands = new Set<FriendlyCommand>(["init", "scan", "report", "findings", "quality", "priorities", "review", "ci", "history", "doctor"]);
 
 /** Converts the compact public commands into the existing flag-based CLI contract. */
 export function expandFriendlyCommand(values: string[]): string[] {
@@ -13,6 +13,7 @@ export function expandFriendlyCommand(values: string[]): string[] {
   if (command === "scan") return [...rest, "--format", "summary"];
   if (command === "report") return [...rest, "--format", "html"];
   if (command === "findings") return [...rest, "--format", "table"];
+  if (command === "quality") return [...rest, "--format", "quality"];
   if (command === "priorities") return [...rest, "--format", "priorities"];
   if (command === "history") return [...rest, "--format", "trend"];
   if (command === "ci") return [...rest, "--format", "summary", "--require-analyzers"];
@@ -37,6 +38,7 @@ export const friendlyCommandHelp = `Friendly commands:
   vulnweave scan [path]                 Scan with project defaults
   vulnweave report [path]               Print a self-contained HTML report
   vulnweave findings [path]             List findings as a table
+  vulnweave quality [path]              Show duplicate-code and complexity signals
   vulnweave priorities [path]           Rank findings by evidence-backed impact
   vulnweave review [path] --base <ref>  Review changed code against a Git reference
   vulnweave ci [path]                   Enforce policy and required analyzer health

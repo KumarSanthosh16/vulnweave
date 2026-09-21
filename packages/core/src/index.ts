@@ -3,6 +3,8 @@ export * from "./baseline-policy.js";
 export * from "./analyzer-health.js";
 export * from "./batch-orchestrator.js";
 export * from "./code-symbols.js";
+export * from "./code-quality.js";
+export * from "./quality-gate.js";
 export * from "./correlation.js";
 export * from "./dependency-reachability.js";
 export * from "./evidence-graph.js";
