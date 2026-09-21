@@ -8,9 +8,9 @@ export interface QualityGatePolicy {
 
 export interface QualityGateResult { configured: boolean; passed: boolean; violations: string[]; }
 
-const limits: Array<[keyof QualityGatePolicy, QualitySignalKind, string]> = [
+const limits: Array<[keyof QualityGatePolicy, QualitySignalKind | "duplicate", string]> = [
   ["maxComplexitySignals", "high-complexity", "complexity signals"],
-  ["maxDuplicateCodeSignals", "duplicate-code", "duplicate-code signals"],
+  ["maxDuplicateCodeSignals", "duplicate", "duplicate implementation signals"],
   ["maxUnreferencedFiles", "unreferenced-file", "unreferenced files"]
 ];
 
@@ -19,7 +19,7 @@ export function evaluateQualityGate(signals: QualitySignal[], policy?: QualityGa
   if (!policy || Object.keys(policy).length === 0) return { configured: false, passed: true, violations: [] };
   const violations = limits.flatMap(([key, kind, label]) => {
     const maximum = policy[key];
-    const count = signals.filter((signal) => signal.kind === kind).length;
+    const count = signals.filter((signal) => kind === "duplicate" ? signal.kind === "duplicate-code" || signal.kind === "duplicate-function" : signal.kind === kind).length;
     return maximum !== undefined && count > maximum ? [`${count} ${label} exceeds limit ${maximum}`] : [];
   });
   return { configured: true, passed: violations.length === 0, violations };

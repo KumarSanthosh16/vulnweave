@@ -131,7 +131,7 @@ pnpm cli -- doctor
 
 `report` writes HTML to standard output so it can be saved without a server: `pnpm cli -- report . > vulnweave-report.html`. The existing flag-based interface remains available for scripting, filtering, and scanner-specific options.
 
-`quality` is advisory-only: it reports normalized repeated six-line code blocks, functions with a simple cyclomatic-complexity signal of 10 or above, and non-entry source files with no observed local static import. An unreferenced-file signal is not proof that code is dead: dynamic imports, framework routing, generated code, and other packages may still consume it. Quality signals do not alter the security gate.
+`quality` is advisory-only by default. It reports correlated duplicate implementations (using normalized source-block and parsed function-body evidence), cyclomatic complexity, oversized functions, excessive parameter counts, deep nesting, and non-entry source files with no observed local static import. An unreferenced-file signal is not proof that code is dead: dynamic imports, framework routing, generated code, and other packages may still consume it.
 
 Tune the advisory thresholds in `vulnweave.config.json` when a project needs a different standard:
 
@@ -139,12 +139,27 @@ Tune the advisory thresholds in `vulnweave.config.json` when a project needs a d
 {
   "quality": {
     "complexityThreshold": 12,
-    "duplicateBlockLines": 8
+    "duplicateBlockLines": 8,
+    "nestingThreshold": 4,
+    "functionLineThreshold": 60,
+    "parameterThreshold": 5
   }
 }
 ```
 
-Quality signals are saved with scans and appear in the HTML report, but remain separate from security findings and gates.
+Quality signals are saved with scans. The HTML report presents duplicate and maintainability signals; use `pnpm cli -- quality .` for the complete list, including unreferenced-file review. They remain separate from security findings and gates unless you explicitly opt in to a quality gate:
+
+```json
+{
+  "qualityGate": {
+    "maxComplexitySignals": 8,
+    "maxDuplicateCodeSignals": 2,
+    "maxUnreferencedFiles": 0
+  }
+}
+```
+
+When configured, `pnpm cli -- ci .` exits unsuccessfully if any quality limit is exceeded. Start with advisory reports, tune thresholds for the project, and enable a quality gate only after reviewing the baseline.
 
 For custom Gitleaks rules, prefer a portable project setting in `vulnweave.config.json`:
 
