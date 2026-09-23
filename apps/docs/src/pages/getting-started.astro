@@ -1,0 +1,20 @@
+---
+import DocsLayout from "../layouts/DocsLayout.astro";
+---
+<DocsLayout title="Get started" description="Install VulnWeave's local dependencies and run your first scan.">
+  <article class="prose">
+    <p class="eyebrow">GET STARTED</p><h1>Your first local scan</h1>
+    <p class="lede">You need a source checkout of VulnWeave, pnpm, and the scanners it invokes. Nothing is sent to a VulnWeave server.</p>
+    <h2>1. Install prerequisites</h2>
+    <p>Install <strong>Gitleaks</strong>, <strong>Semgrep</strong>, <strong>OSV-Scanner</strong>, and <strong>Trivy</strong> using the method appropriate for your operating system. Then install this repository’s JavaScript dependencies.</p>
+    <pre><code>pnpm install&#10;pnpm cli -- doctor</code></pre><p><code>doctor</code> only checks which analyzers are installed. It does not scan code.</p>
+    <h2>2. Create a reviewable starting policy</h2>
+    <pre><code>pnpm cli -- init .</code></pre><p>This safely creates <code>vulnweave.config.json</code>, <code>vulnweave.baseline.json</code>, and a starter Semgrep rule only when they do not already exist. Read and commit these policy files with your project.</p>
+    <h2>3. Scan</h2>
+    <pre><code>pnpm cli -- scan .</code></pre><p>VulnWeave runs the configured local analyzers and prints a summary. A non-zero exit code can be expected when your reviewed gate sees findings at or above its configured severity. That is how a CI safety gate communicates “review needed.”</p>
+    <h2>4. Open a local report</h2>
+    <pre><code>pnpm cli -- report . &gt; vulnweave-report.html</code></pre><p>Open the generated file in a browser. It is self-contained and can be viewed offline. The scan record stays under <code>.vulnweave/</code>, which is ignored by Git.</p>
+    <h2>5. Use everyday commands</h2>
+    <div class="command-grid"><code>scan .</code><span>Run a summary scan with project defaults.</span><code>findings .</code><span>List current issues in a compact table.</span><code>quality .</code><span>Review advisory maintainability signals.</span><code>priorities .</code><span>Rank findings using local evidence.</span><code>history .</code><span>Inspect your saved local scan trend.</span><code>ci .</code><span>Enforce reviewed policy and analyzer health.</span></div>
+  </article>
+</DocsLayout>

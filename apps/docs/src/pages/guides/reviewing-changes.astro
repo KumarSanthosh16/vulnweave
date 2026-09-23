@@ -1,0 +1,12 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+<DocsLayout title="Review changes" description="Use Git context, static import evidence, and owners to focus a VulnWeave review.">
+  <article class="prose">
+    <p class="eyebrow">GUIDE</p><h1>Review a change with context</h1><p class="lede">VulnWeave can focus a review on changed files and local import dependents when it has valid Git context. It still scans the whole repository and never treats static analysis as runtime proof.</p>
+    <h2>Change impact</h2><pre><code>pnpm cli -- . --changed-since main --format changes&#10;pnpm cli -- review . --base main</code></pre><p>The first command reports changed files, local files that import them (including transitive dependents), and findings located in either set. The friendly <code>review</code> command creates a copyable review packet with priority, owners, and remediation.</p>
+    <h2>Changed-code gate</h2><pre><code>pnpm cli -- . --changed-since main --review-changes --format summary</code></pre><p>This evaluates findings in changed JavaScript/TypeScript files and local import dependents. It exits clearly when no usable Git reference or change context exists; it never quietly treats an empty scope as safe.</p>
+    <h2>Ownership and evidence graph</h2><pre><code>pnpm cli -- . --format ownership&#10;pnpm cli -- . --format graph&#10;pnpm cli -- . --format symbols</code></pre><p>Ownership uses <code>.github/CODEOWNERS</code>, <code>CODEOWNERS</code>, or <code>docs/CODEOWNERS</code> with GitHub’s last-match-wins behavior. Graph and symbol results connect findings to local files, evidence, packages, and enclosing JavaScript/TypeScript symbols.</p>
+    <h2>Dependency reachability</h2><pre><code>pnpm cli -- . --format reachability</code></pre><p>A <code>referenced</code> dependency has observed indexed static import evidence. <code>not-observed</code> does not mean unused at runtime; dynamic imports, generated code, other languages, and deployment configuration are outside that claim.</p>
+  </article>
+</DocsLayout>

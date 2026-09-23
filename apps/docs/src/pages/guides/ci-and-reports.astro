@@ -1,0 +1,12 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+<DocsLayout title="CI and reports" description="Use VulnWeave reports and reviewed gates in local workflows and CI.">
+  <article class="prose">
+    <p class="eyebrow">GUIDE</p><h1>Reports, gates, and CI</h1><p class="lede">Start locally, review the baseline, and then use the same commands in CI. A failed gate means “review is required,” not that the scanner or command itself is broken.</p>
+    <h2>Local HTML report</h2><pre><code>pnpm cli -- report . &gt; vulnweave-report.html</code></pre><p>The report is a self-contained file. It includes severity totals, scanner health, canonical findings, priorities, remediation guidance, evidence graph totals, maintainability sections, and local scan trends. It does not upload source or scan data.</p>
+    <h2>SARIF export</h2><pre><code>pnpm build&#10;node packages/cli/dist/index.js . --format sarif &gt; vulnweave.sarif</code></pre><p>SARIF 2.1.0 can be uploaded to compatible code-scanning systems. The repository workflow exports it as an artifact even when a policy gate fails.</p>
+    <h2>Gates</h2><pre><code>pnpm cli -- ci .&#10;pnpm cli -- . --format summary --fail-on high --require-analyzers&#10;pnpm cli -- . --format summary --baseline latest --fail-on high</code></pre><p>A standard gate evaluates findings at or above the chosen severity. A baseline gate evaluates only new findings since the selected baseline. Analyzer health is a separate condition: use <code>--require-analyzers</code> when every selected scanner must complete.</p>
+    <h2>Trends, plans, and remediation</h2><pre><code>pnpm cli -- history .&#10;pnpm cli -- . --format upgrades&#10;pnpm cli -- . --format remediation</code></pre><p>All three are advisory. Upgrade plans show only scanner-reported fixed versions; remediation never edits code, lockfiles, configuration, or credentials.</p>
+  </article>
+</DocsLayout>

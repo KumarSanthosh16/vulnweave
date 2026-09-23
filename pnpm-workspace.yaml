@@ -1,7 +1,9 @@
 packages:
   - "packages/*"
+  - "apps/*"
 allowBuilds:
   esbuild: true
+  sharp: true
   tree-sitter: true
   tree-sitter-javascript: true
   tree-sitter-typescript: true

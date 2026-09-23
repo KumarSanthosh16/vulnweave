@@ -1,0 +1,12 @@
+---
+import DocsLayout from "../layouts/DocsLayout.astro";
+---
+<DocsLayout title="Contributing" description="How to contribute safely to VulnWeave.">
+  <article class="prose">
+    <p class="eyebrow">CONTRIBUTING</p><h1>Help improve VulnWeave</h1><p class="lede">Contributions should preserve the project’s local-first, evidence-led model.</p>
+    <h2>Before opening a change</h2><ol><li>Keep scanner integrations behind the Analyzer Adapter boundary.</li><li>Do not persist matched secret values in normalized findings or reports.</li><li>Make user-visible claims traceable to scanner or local static evidence.</li><li>Keep analysis advisory unless a user explicitly configures a reviewed gate.</li></ol>
+    <h2>Validate your work</h2><pre><code>pnpm install&#10;pnpm check&#10;pnpm test&#10;pnpm docs:build</code></pre>
+    <h2>Good first areas</h2><ul><li>Improve scanner normalization tests with safe, deterministic fixtures.</li><li>Improve documentation and plain-language guidance.</li><li>Add evidence-backed local graph relationships.</li><li>Improve accessibility or rendering of static reports and docs.</li></ul>
+    <p>VulnWeave Core is licensed under Apache-2.0. See the repository’s <a href="https://github.com/KumarSanthosh16/vulnweave/blob/main/LICENSE">LICENSE</a> and <a href="https://github.com/KumarSanthosh16/vulnweave/blob/main/THIRD_PARTY_NOTICES.md">third-party notices</a>.</p>
+  </article>
+</DocsLayout>

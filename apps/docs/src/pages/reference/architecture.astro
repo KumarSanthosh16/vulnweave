@@ -1,0 +1,13 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+<DocsLayout title="Architecture" description="A developer overview of VulnWeave's local-first analyzer, evidence, and presentation architecture.">
+  <article class="prose">
+    <p class="eyebrow">REFERENCE</p><h1>A small core around replaceable analyzers</h1><p class="lede">VulnWeave owns the contracts and workflow. Third-party scanners remain independently installed local workers.</p>
+    <div class="architecture" aria-label="VulnWeave architecture"><div>Gitleaks<br />Semgrep<br />OSV-Scanner<br />Trivy</div><span>→</span><div>Analyzer adapters</div><span>→</span><div class="accent-box">Normalized findings<br />+ evidence</div><span>→</span><div>Graph · priority · reports · gates</div></div>
+    <h2>Analyzer Adapter API</h2><p>An adapter runs one tool and converts its native output into <code>FindingInput</code>. The core validates and normalizes the result, creating predictable IDs when needed. An adapter does not own policy, correlation, reports, or gates.</p>
+    <h2>Evidence is first-class</h2><p>Findings carry evidence such as source snippets, scanner metadata, dependency advisories, and locations. The evidence graph connects findings to files, symbols, packages, ownership, and observed static imports. This design makes conclusions inspectable.</p>
+    <h2>Orchestration and state</h2><p>The <code>AnalysisOrchestrator</code> follows an explicit lifecycle: <code>idle → preparing → running → normalizing → completed</code>, with <code>failed</code> and <code>cancelled</code> terminal states. Batch execution preserves successful analyzer results when another analyzer fails.</p>
+    <h2>Repository map</h2><pre><code>packages/core/                 contracts, orchestration, policy, reports&#10;packages/*-analyzer/           one local adapter per scanner&#10;packages/tree-sitter-indexer/  local JavaScript/TypeScript symbols&#10;packages/cli/                  command-line boundary&#10;apps/docs/                     this static documentation site</code></pre>
+  </article>
+</DocsLayout>

@@ -29,7 +29,7 @@ VulnWeave does not replace security review, penetration testing, or the scanners
 - Enforces severity and analyzer-health gates for local use and CI.
 - Supports baseline-aware scans, local history, trends, and reviewed suppressions.
 - Builds local evidence graphs, code-symbol links, dependency import observations, priority rankings, remediation advice, upgrade plans, ownership routing, and changed-code review context.
-- Flags repeated six-line source blocks and functions with a high branch-complexity signal as advisory code-quality feedback.
+- Provides advisory code-quality feedback for duplicate implementations, complexity, deep nesting, oversized functions, excessive parameters, and potential unreferenced files.
 
 ## Quick start
 
@@ -57,6 +57,27 @@ pnpm cli -- ci .
 
 The command exits unsuccessfully when findings violate the configured policy or a required analyzer is unavailable. That is intended behavior for a security gate.
 
+## Documentation
+
+This README is the project overview and fast path for evaluators, users, and contributors. The complete technical documentation lives in `apps/docs/`; it is a static Astro site with no runtime backend or telemetry. It includes:
+
+- Beginner onboarding, prerequisites, first scan, and report reading.
+- Full command, format, filtering, saved-history, and baseline reference.
+- Project configuration, baseline policy, time-bounded suppressions, and quality gates.
+- Analyzer setup, local Semgrep packs, custom Gitleaks configuration, and scanner limitations.
+- CI, HTML/SARIF reports, trends, remediation, upgrades, ownership, evidence graph, dependency reachability, and changed-code review.
+- Architecture, contribution rules, release process, licensing, and security reporting.
+
+Run it locally with:
+
+```bash
+pnpm docs:dev
+```
+
+Create the deployable static output with `pnpm docs:build`; Astro writes it to `apps/docs/dist/`.
+
+The README deliberately retains the most important commands, configuration examples, scanner model, legal notices, and development workflow below, so a GitHub visitor can understand and try the project without leaving this page.
+
 ## Structure
 
 ```text
@@ -68,6 +89,8 @@ packages/
   semgrep-analyzer/ Local source-pattern adapter
   trivy-analyzer/    Local dependency and configuration adapter
   cli/           Small executable boundary for local runs
+apps/
+  docs/          Static Astro documentation site
 ```
 
 ## Core contracts
@@ -175,7 +198,7 @@ For a one-off scan, use `pnpm cli -- scan . --gitleaks-config .gitleaks.toml`.
 
 ## Third-party licensing
 
-VulnWeave Core is licensed under Apache-2.0. It invokes Gitleaks, Semgrep Community Edition, OSV-Scanner, and Trivy as separately installed local tools and does not bundle their binaries. Their licenses and the direct runtime/development dependency inventory are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Any future hosted or enterprise offering will be governed by separate commercial terms and must keep a clear boundary from Apache-2.0 core code.
+VulnWeave Core is licensed under Apache-2.0. It invokes Gitleaks, Semgrep Community Edition, OSV-Scanner, and Trivy as separately installed local tools and does not bundle their binaries. Their licenses and the direct runtime/development dependency inventory are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). See [SECURITY.md](SECURITY.md) for the vulnerability-reporting process and [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) before creating a public release. Any future hosted or enterprise offering will be governed by separate commercial terms and must keep a clear boundary from Apache-2.0 core code.
 
 The included baseline starts with a high-severity gate and requires all selected analyzers to complete:
 

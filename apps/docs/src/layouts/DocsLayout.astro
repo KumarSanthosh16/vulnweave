@@ -1,0 +1,38 @@
+---
+import "../styles/global.css";
+
+interface Props { title: string; description: string; }
+const { title, description } = Astro.props;
+const path = Astro.url.pathname;
+const nav = [
+  { label: "START HERE", links: [["/", "Overview"], ["/getting-started/", "Get started"]] },
+  { label: "GUIDES", links: [["/guides/reading-results/", "Read results"], ["/guides/ci-and-reports/", "CI and reports"], ["/guides/reviewing-changes/", "Review changes"]] },
+  { label: "REFERENCE", links: [["/reference/cli/", "CLI reference"], ["/reference/configuration/", "Configuration and policy"], ["/reference/analyzers/", "Analyzers"], ["/reference/architecture/", "Architecture"]] },
+  { label: "PROJECT", links: [["/contributing/", "Contributing"]] }
+];
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{title} · VulnWeave</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="VulnWeave documentation home"><span class="brand-mark">⌁</span><span>VulnWeave</span></a>
+      <span class="header-note">LOCAL-FIRST SECURITY</span>
+      <a class="repo-link" href="https://github.com/KumarSanthosh16/vulnweave">GitHub <span aria-hidden="true">↗</span></a>
+    </header>
+    <div class="site-shell">
+      <aside class="sidebar" aria-label="Documentation navigation">
+        <p class="sidebar-label">DOCUMENTATION</p>
+        <nav>{nav.map((group) => <div class="nav-group"><p>{group.label}</p>{group.links.map(([href, label]) => <a class:list={{ active: path === href }} href={href}>{label}</a>)}</div>)}</nav>
+        <div class="sidebar-callout"><span class="dot"></span><p><strong>Private by default.</strong><br />Scans and history remain on your machine.</p></div>
+      </aside>
+      <main class="content"><slot /></main>
+    </div>
+    <footer>VulnWeave Core · Apache-2.0 · Built for local review</footer>
+  </body>
+</html>

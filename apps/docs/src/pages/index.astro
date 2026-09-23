@@ -1,0 +1,35 @@
+---
+import DocsLayout from "../layouts/DocsLayout.astro";
+---
+<DocsLayout title="Documentation" description="Learn what VulnWeave does, why it exists, and how to run your first local scan.">
+  <section class="hero">
+    <p class="eyebrow">OPEN-SOURCE · LOCAL-FIRST</p>
+    <h1>Security feedback your team can actually act on.</h1>
+    <p class="lede">VulnWeave brings trusted code-security tools into one local workflow. It shows what was found, what overlaps, what changed, and what deserves attention first—without uploading your source code.</p>
+    <div class="hero-actions"><a class="button primary" href="/getting-started/">Run your first scan <span>→</span></a><a class="button" href="/guides/reading-results/">See how results work</a></div>
+  </section>
+  <section class="trust-strip" aria-label="Product principles">
+    <div><strong>Local</strong><span>Source and scan history stay on your machine.</span></div>
+    <div><strong>Evidence-led</strong><span>Every result keeps its scanner and code context.</span></div>
+    <div><strong>Composable</strong><span>Scanners remain separate, replaceable workers.</span></div>
+  </section>
+  <section class="doc-section">
+    <p class="eyebrow">IN PLAIN ENGLISH</p>
+    <h2>What is VulnWeave?</h2>
+    <p>Security tools are good at detecting specific things: a leaked secret, a vulnerable package, unsafe code, or insecure configuration. The problem is that each tool reports in a different way. A developer can end up with overlapping alerts and no clear starting point.</p>
+    <p>VulnWeave runs those tools locally, converts their output into one consistent format, keeps the proof behind each result, and helps you review the outcome. It is not a replacement for security review or for the scanners themselves.</p>
+  </section>
+  <section class="doc-section">
+    <div class="section-heading"><div><p class="eyebrow">ONE FLOW, CLEARER ANSWERS</p><h2>What it helps you do</h2></div><span class="section-id">01—04</span></div>
+    <div class="step-list">
+      <article><span>01</span><div><h3>Scan your repository</h3><p>Run Gitleaks, Semgrep, OSV-Scanner, and Trivy from your own computer.</p></div></article>
+      <article><span>02</span><div><h3>Remove alert noise</h3><p>Overlapping dependency reports are correlated into one issue while preserving each scanner’s evidence.</p></div></article>
+      <article><span>03</span><div><h3>Understand impact</h3><p>Use source symbols, static imports, Git changes, owners, and priority signals to focus the review.</p></div></article>
+      <article><span>04</span><div><h3>Make a decision</h3><p>Inspect a local report, then enforce only the gates your project has reviewed.</p></div></article>
+    </div>
+  </section>
+  <section class="doc-section split-card">
+    <div><p class="eyebrow">START HERE</p><h2>New to security tooling?</h2><p>Follow a guided first scan. It explains the required tools, creates safe starter policy files, and shows how to read a report.</p><a class="text-link" href="/getting-started/">Get started in five steps →</a></div>
+    <pre aria-label="First scan command"><code>pnpm cli -- init .&#10;pnpm cli -- doctor&#10;pnpm cli -- scan .</code></pre>
+  </section>
+</DocsLayout>

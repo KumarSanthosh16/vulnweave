@@ -27,9 +27,12 @@ modify, or redistribute Semgrep without separately meeting its LGPL terms.
 | tsx | MIT | https://github.com/privatenumber/tsx/blob/master/LICENSE |
 | esbuild | MIT | https://github.com/evanw/esbuild/blob/master/LICENSE.md |
 | @types/node | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/LICENSE |
+| Astro | MIT | https://github.com/withastro/astro/blob/main/LICENSE |
+| @astrojs/check | MIT | https://github.com/withastro/check/blob/main/LICENSE |
 
+VulnWeave Core is licensed under Apache-2.0; see `LICENSE` and `NOTICE`.
 This file is an inventory aid, not legal advice. Before distributing a release,
-generate a complete production dependency inventory, retain all required
-copyright and license notices, and obtain legal review for your distribution
-model. VulnWeave's own license has not yet been selected; do not assume an
-open-source license applies to this repository.
+generate and retain a complete dependency inventory for the exact release
+artifact, preserve all required copyright and license notices, and obtain
+qualified legal review for the distribution model, trademarks, privacy posture,
+and any future hosted or enterprise offering.

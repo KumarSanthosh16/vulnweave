@@ -1,0 +1,12 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+<DocsLayout title="Analyzers" description="Learn how VulnWeave uses local Gitleaks, Semgrep, OSV-Scanner, and Trivy analyzers.">
+  <article class="prose">
+    <p class="eyebrow">REFERENCE</p><h1>Local analyzers</h1><p class="lede">VulnWeave does not replace scanners. It invokes separately installed local tools through small adapters, normalizes their output, and preserves the underlying evidence.</p>
+    <h2>Supported tools</h2><div class="command-grid"><code>Gitleaks</code><span>Secret detection. Matched secret values are intentionally excluded from normalized findings.</span><code>Semgrep CE</code><span>Source-pattern analysis using local, reviewed YAML rules.</span><code>OSV-Scanner</code><span>Known dependency vulnerability analysis.</span><code>Trivy</code><span>Filesystem dependency and configuration findings.</span></div>
+    <h2>Semgrep rules and packs</h2><p>The starter rule is deliberately small and includes an <code>eval</code> check for JavaScript and TypeScript. Add a reviewed local pack explicitly; packs are additive and each result retains its pack provenance.</p><pre><code>pnpm cli -- . --analyzer semgrep --semgrep-pack typescript-security --format table&#10;pnpm cli -- . --analyzer semgrep --semgrep-pack typescript-quality --format table</code></pre><p>The security pack covers dynamic code and direct child-process checks. The quality pack includes diagnostic <code>console.log</code> checks. Review and tune local YAML before using any pack as a merge gate.</p>
+    <h2>Custom Gitleaks policy</h2><pre><code>&#123; "gitleaksConfig": ".gitleaks.toml" &#125;</code></pre><p>Put the setting in the project configuration for portable repository behavior, or use <code>--gitleaks-config .gitleaks.toml</code> for one run.</p>
+    <h2>Correlation and limitations</h2><p>OSV-Scanner and Trivy can describe the same dependency advisory. VulnWeave correlates matching reports into a canonical issue, retains both pieces of evidence, and uses the highest reported severity. It does not claim a dependency is runtime-safe or unreachable: static import evidence is a review aid only.</p>
+  </article>
+</DocsLayout>

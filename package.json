@@ -2,13 +2,16 @@
   "name": "vulnweave",
   "private": true,
   "version": "0.1.0",
+  "license": "Apache-2.0",
   "description": "Local-first code quality and security impact analysis",
   "packageManager": "pnpm@12.3.4",
   "scripts": {
     "build": "pnpm --recursive run build",
     "check": "pnpm build && pnpm --recursive run check",
     "test": "pnpm build && pnpm --recursive run test",
-    "cli": "pnpm --filter @vulnweave/cli start"
+    "cli": "pnpm --filter @vulnweave/cli start",
+    "docs:dev": "pnpm --filter @vulnweave/docs dev",
+    "docs:build": "pnpm --filter @vulnweave/docs build"
   },
   "devDependencies": {
     "@types/node": "^22.13.0",

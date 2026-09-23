@@ -1,0 +1,14 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+<DocsLayout title="Read results" description="Understand VulnWeave findings, correlation, priorities, reports, and quality signals.">
+  <article class="prose">
+    <p class="eyebrow">GUIDE</p><h1>How to read a VulnWeave result</h1><p class="lede">A result is a review aid, not an automatic verdict. Start with the evidence, then apply your team’s context.</p>
+    <h2>Findings are canonical issues</h2><p>Each finding has a severity, category, rule, location when available, and supporting evidence. When OSV-Scanner and Trivy describe the same dependency advisory, VulnWeave presents one canonical issue instead of double-counting it. The original scanner evidence remains attached.</p>
+    <h2>Severity and priority are different</h2><p>Severity is reported by the scanner and is not silently changed. Priority is a transparent local score that can consider evidence such as source location, static dependency imports, symbols, and changed files. Use it to decide review order—not to redefine the underlying alert.</p>
+    <pre><code>pnpm cli -- findings .&#10;pnpm cli -- priorities .&#10;pnpm cli -- report . &gt; vulnweave-report.html</code></pre>
+    <h2>Read quality signals as advice</h2><p>Complexity, duplicate implementation, nesting, oversized functions, excessive parameters, and unreferenced-file signals are maintainability prompts. They are advisory by default and separate from security findings. Dynamic imports, framework routes, generated code, and other languages can make static analysis incomplete.</p>
+    <h2>Use baselines carefully</h2><p>A baseline lets an already-reviewed issue remain visible without repeatedly failing the gate. Every suppression needs a fingerprint, reason, owner, and expiry date. It is not a way to hide an issue forever.</p>
+    <h2>Review changed code when Git context exists</h2><pre><code>pnpm cli -- review . --base main</code></pre><p>This concentrates a review packet on changed source files and local import dependents. It fails clearly if no valid Git change context is available rather than pretending an empty review is safe.</p>
+  </article>
+</DocsLayout>
