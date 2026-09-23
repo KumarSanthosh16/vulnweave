@@ -8,6 +8,9 @@ test("skips nested generated and third-party directories", () => {
   for (const directory of ["**/node_modules", "**/node_modules/.pnpm", "**/.pnpm-store", "**/dist", "**/.astro", "**/fixtures"]) {
     assert.equal(arguments_.includes(directory), true);
   }
+  for (const file of ["node_modules/**", "**/node_modules/**"]) {
+    assert.equal(arguments_.includes(file), true);
+  }
 });
 
 test("normalizes Trivy vulnerabilities and misconfigurations without config excerpts", () => {

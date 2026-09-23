@@ -63,9 +63,14 @@ export function trivyArguments(rootDir: string): string[] {
     ".astro", "**/.astro",
     "fixtures", "**/fixtures"
   ];
+  // Trivy's configuration scanner can follow pnpm links after directory
+  // filtering. File-level exclusions make generated dependency contents
+  // unambiguous while root lockfiles remain available to vulnerability scans.
+  const skippedFiles = ["node_modules/**", "**/node_modules/**"];
   return [
     "fs", "--format", "json", "--quiet", "--scanners", "vuln,misconfig",
     ...skippedDirectories.flatMap((directory) => ["--skip-dirs", directory]),
+    ...skippedFiles.flatMap((file) => ["--skip-files", file]),
     rootDir
   ];
 }
