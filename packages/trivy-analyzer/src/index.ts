@@ -53,6 +53,9 @@ export class TrivyAnalyzer implements AnalyzerAdapter {
 export function trivyArguments(rootDir: string): string[] {
   const skippedDirectories = [
     "node_modules", "**/node_modules",
+    // pnpm keeps package contents beneath this directory. Trivy can discover
+    // those contents independently of the parent node_modules entry.
+    "node_modules/.pnpm", "**/node_modules/.pnpm",
     ".pnpm-store", "**/.pnpm-store",
     ".git", "**/.git",
     ".vulnweave", "**/.vulnweave",

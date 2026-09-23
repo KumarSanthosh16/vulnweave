@@ -5,7 +5,7 @@ import { parseTrivyReport, trivyArguments } from "./index.js";
 test("skips nested generated and third-party directories", () => {
   const arguments_ = trivyArguments("/workspace");
   assert.deepEqual(arguments_.slice(-1), ["/workspace"]);
-  for (const directory of ["**/node_modules", "**/.pnpm-store", "**/dist", "**/.astro", "**/fixtures"]) {
+  for (const directory of ["**/node_modules", "**/node_modules/.pnpm", "**/.pnpm-store", "**/dist", "**/.astro", "**/fixtures"]) {
     assert.equal(arguments_.includes(directory), true);
   }
 });
