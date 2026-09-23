@@ -44,13 +44,27 @@ export class TrivyAnalyzer implements AnalyzerAdapter {
   }
 
   async analyze(request: AnalysisRequest): Promise<FindingInput[]> {
-    const { stdout } = await execFile("trivy", [
-      "fs", "--format", "json", "--quiet", "--scanners", "vuln,misconfig",
-      "--skip-dirs", "node_modules", "--skip-dirs", ".git", "--skip-dirs", ".vulnweave", "--skip-dirs", "**/fixtures/**",
-      request.rootDir
-    ], { maxBuffer: 20 * 1024 * 1024 });
+    const { stdout } = await execFile("trivy", trivyArguments(request.rootDir), { maxBuffer: 20 * 1024 * 1024 });
     return parseTrivyReport(JSON.parse(stdout) as TrivyReport);
   }
+}
+
+/** Excludes generated and third-party directories at the root and every nested depth. */
+export function trivyArguments(rootDir: string): string[] {
+  const skippedDirectories = [
+    "node_modules", "**/node_modules",
+    ".pnpm-store", "**/.pnpm-store",
+    ".git", "**/.git",
+    ".vulnweave", "**/.vulnweave",
+    "dist", "**/dist",
+    ".astro", "**/.astro",
+    "fixtures", "**/fixtures"
+  ];
+  return [
+    "fs", "--format", "json", "--quiet", "--scanners", "vuln,misconfig",
+    ...skippedDirectories.flatMap((directory) => ["--skip-dirs", directory]),
+    rootDir
+  ];
 }
 
 /** Converts Trivy's filesystem report without retaining configuration file contents. */

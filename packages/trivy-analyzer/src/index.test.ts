@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseTrivyReport } from "./index.js";
+import { parseTrivyReport, trivyArguments } from "./index.js";
+
+test("skips nested generated and third-party directories", () => {
+  const arguments_ = trivyArguments("/workspace");
+  assert.deepEqual(arguments_.slice(-1), ["/workspace"]);
+  for (const directory of ["**/node_modules", "**/.pnpm-store", "**/dist", "**/.astro", "**/fixtures"]) {
+    assert.equal(arguments_.includes(directory), true);
+  }
+});
 
 test("normalizes Trivy vulnerabilities and misconfigurations without config excerpts", () => {
   const findings = parseTrivyReport({ Results: [{
