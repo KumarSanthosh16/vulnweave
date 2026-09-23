@@ -7,4 +7,5 @@ apps/docs/.astro/
 .signal-impact/
 .vulnweave/
 vulnweave-report.html
+vulnweave-*-report.html
 vulnweave.sarif
