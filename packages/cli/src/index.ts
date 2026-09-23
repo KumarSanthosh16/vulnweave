@@ -86,7 +86,10 @@ const displayedAssessments = rankFindings(displayedRecord.findings, symbolLinks,
 const displayedRemediation = remediation.filter((item) => displayedRecord.findings.some((finding) => finding.id === item.findingId));
 const explainedFinding = options.finding ? displayedRecord.findings.find((finding) => finding.id === options.finding) : displayedAssessments.length > 0 ? displayedRecord.findings.find((finding) => finding.id === displayedAssessments[0]?.findingId) : undefined;
 const gateText = formatGateResult(gate, Boolean(baseline), options.reviewChanges);
-const output = options.format === "summary" ? `${formatScanSummary(displayedRecord, comparison)}\n${gateText}\n${formatAnalyzerHealth(analyzerHealth)}\n${formatQualityGate(qualityGate)}`
+const gateViolations = options.format === "summary" && gate.violations.length > 0
+  ? `\nBlocking findings:\n${formatFindingsTable(gate.violations, displayedRecord.suppressions)}`
+  : "";
+const output = options.format === "summary" ? `${formatScanSummary(displayedRecord, comparison)}\n${gateText}${gateViolations}\n${formatAnalyzerHealth(analyzerHealth)}\n${formatQualityGate(qualityGate)}`
   : options.format === "table" ? formatFindingsTable(displayedRecord.findings, displayedRecord.suppressions)
   : options.format === "quality" ? formatQualityTable(qualitySignals)
   : options.format === "graph" ? formatGraphSummary(buildEvidenceGraph(displayedRecord))
