@@ -106,7 +106,7 @@ function normalizeMisconfiguration(result: TrivyResult, misconfiguration: TrivyM
     location,
     fingerprint: `trivy:misconfiguration:${result.Target}:${misconfiguration.ID}:${location?.startLine ?? 0}`,
     references: uniqueReferences(misconfiguration.PrimaryURL),
-    metadata: { target: result.Target, targetType: result.Type ?? "unknown", resource: misconfiguration.CauseMetadata?.Resource ?? "" },
+    metadata: { target: result.Target, targetType: result.Type ?? "unknown", resource: misconfiguration.CauseMetadata?.Resource ?? "", sourcePath: result.Target },
     evidence: [{
       id: `trivy:misconfiguration:${result.Target}:${misconfiguration.ID}:${location?.startLine ?? 0}`,
       kind: "configuration",

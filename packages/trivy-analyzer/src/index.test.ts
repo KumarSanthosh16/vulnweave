@@ -28,5 +28,6 @@ test("normalizes Trivy vulnerabilities and misconfigurations without config exce
   assert.equal(findings[0]?.severity, "high");
   assert.equal(findings[1]?.category, "infrastructure");
   assert.deepEqual(findings[1]?.location, { path: "package-lock.json", startLine: 8, startColumn: 1, endLine: 9 });
+  assert.equal(findings[1]?.metadata?.sourcePath, "package-lock.json");
   assert.equal("excerpt" in (findings[1]?.evidence[0] ?? {}), false);
 });
