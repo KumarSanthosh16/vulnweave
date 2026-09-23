@@ -65,7 +65,7 @@ jobs:
       - name: Export SARIF
         id: sarif-export
         if: always() && steps.sarif-build.outcome == 'success'
-        run: node ./packages/cli/dist/index.js . --format sarif > vulnweave.sarif
+        run: node ./packages/cli/dist/index.js . --format sarif --no-gate --no-save > vulnweave.sarif
       # Code Scanning must be enabled before private repositories can accept SARIF.
       # Keep the local artifact even when this optional GitHub integration is unavailable.
       - name: Publish SARIF to GitHub Code Scanning

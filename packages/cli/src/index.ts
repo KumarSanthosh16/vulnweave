@@ -17,7 +17,7 @@ if (args.includes("--version") || args.includes("-V")) {
   process.exit(0);
 }
 if (args.includes("--help") || args.includes("-h")) {
-  console.log(`${friendlyCommandHelp}\n\nAdvanced usage:\n  vulnweave [path] [--analyzer all|mock|gitleaks|osv|semgrep|trivy] [--gitleaks-config rules.toml] [--semgrep-config rules.yml] [--semgrep-pack typescript-security|typescript-quality] [--format json|summary|table|quality|graph|symbols|priorities|hotspots|changes|review|trend|reachability|upgrades|remediation|ownership|explain|sarif|html] [--history N] [--changed-since git-ref] [--review-changes] [--finding id] [--severity level] [--category type] [--filter-analyzer id] [--include-tests] [--top N] [--baseline latest|run-id] [--fail-on info|low|medium|high|critical] [--require-analyzers] [--compare latest|run-id] [--no-save] [--version]\n\nResults are saved locally under .vulnweave/ unless --no-save is used.`);
+  console.log(`${friendlyCommandHelp}\n\nAdvanced usage:\n  vulnweave [path] [--analyzer all|mock|gitleaks|osv|semgrep|trivy] [--gitleaks-config rules.toml] [--semgrep-config rules.yml] [--semgrep-pack typescript-security|typescript-quality] [--format json|summary|table|quality|graph|symbols|priorities|hotspots|changes|review|trend|reachability|upgrades|remediation|ownership|explain|sarif|html] [--history N] [--changed-since git-ref] [--review-changes] [--finding id] [--severity level] [--category type] [--filter-analyzer id] [--include-tests] [--top N] [--baseline latest|run-id] [--fail-on info|low|medium|high|critical] [--require-analyzers] [--compare latest|run-id] [--no-save] [--no-gate] [--version]\n\nResults are saved locally under .vulnweave/ unless --no-save is used.`);
   process.exit(0);
 }
 if (args.includes("--init")) {
@@ -105,7 +105,7 @@ const output = options.format === "summary" ? `${formatScanSummary(displayedReco
   : options.format === "html" ? toHtmlReport(displayedRecord, trend)
   : JSON.stringify({ phase: "completed", record: displayedRecord, comparison }, null, 2);
 console.log(output);
-if (!gate.passed || !analyzerHealth.passed || !qualityGate.passed) process.exitCode = 1;
+if (!options.noGate && (!gate.passed || !analyzerHealth.passed || !qualityGate.passed)) process.exitCode = 1;
 
 interface ParsedOptions {
   analyzer?: string;
@@ -123,6 +123,7 @@ interface ParsedOptions {
   reviewChanges: boolean;
   failOn?: Severity;
   requireAnalyzers: boolean;
+  noGate: boolean;
   save: boolean;
   includeTests: boolean;
   top: number;
@@ -146,6 +147,7 @@ function parseOptions(values: string[]): ParsedOptions {
   let failOn: Severity | undefined;
   let compare: string | undefined;
   let requireAnalyzers = false;
+  let noGate = false;
   let save = true;
   let includeTests = false;
   let top = Number.POSITIVE_INFINITY;
@@ -177,6 +179,7 @@ function parseOptions(values: string[]): ParsedOptions {
     if (value === "--review-changes") { reviewChanges = true; continue; }
     if (value === "--fail-on") { failOn = requireSeverity(requireValue(values, ++index, "--fail-on")); continue; }
     if (value === "--require-analyzers") { requireAnalyzers = true; continue; }
+    if (value === "--no-gate") { noGate = true; continue; }
     if (value.startsWith("-")) throw new Error(`Unknown option '${value}'`);
     if (rootDir) throw new Error("Only one scan path may be supplied");
     rootDir = resolve(invocationDir, value);
@@ -185,7 +188,7 @@ function parseOptions(values: string[]): ParsedOptions {
     analyzer, gitleaksConfig,
     rootDir: rootDir ?? invocationDir,
     semgrepConfig: semgrepConfig.length > 0 ? semgrepConfig.map((path) => resolve(invocationDir, path)) : undefined,
-    semgrepPacks, format, finding, compare, baseline, changedSince, reviewChanges, failOn, requireAnalyzers, save, includeTests, top, history, filters
+    semgrepPacks, format, finding, compare, baseline, changedSince, reviewChanges, failOn, requireAnalyzers, noGate, save, includeTests, top, history, filters
   };
 }
 
