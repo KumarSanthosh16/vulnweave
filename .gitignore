@@ -1,6 +1,7 @@
 node_modules/
 .pnpm-store/
 dist/
+apps/docs/.astro/
 .DS_Store
 *.tsbuildinfo
 .signal-impact/

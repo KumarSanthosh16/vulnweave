@@ -7,3 +7,7 @@ allowBuilds:
   tree-sitter: true
   tree-sitter-javascript: true
   tree-sitter-typescript: true
+# Immediate security remediation; remove once the normal release-age policy permits them.
+minimumReleaseAgeExclude:
+  - '@astrojs/markdown-satteri@0.4.2'
+  - astro@7.3.4
