@@ -34,3 +34,12 @@ test("normalizes Trivy vulnerabilities and misconfigurations without config exce
   assert.equal(findings[1]?.metadata?.sourcePath, "package-lock.json");
   assert.equal("excerpt" in (findings[1]?.evidence[0] ?? {}), false);
 });
+
+test("does not publish findings from installed dependency contents", () => {
+  const findings = parseTrivyReport({ Results: [{
+    Target: "node_modules/.pnpm/yaml-language-server@1.23.0/node_modules/yaml-language-server/Dockerfile",
+    Misconfigurations: [{ ID: "DS-0002", Title: "Image user should not be 'root'", Severity: "HIGH" }]
+  }] });
+
+  assert.deepEqual(findings, []);
+});

@@ -77,10 +77,20 @@ export function trivyArguments(rootDir: string): string[] {
 
 /** Converts Trivy's filesystem report without retaining configuration file contents. */
 export function parseTrivyReport(report: TrivyReport): FindingInput[] {
-  return (report.Results ?? []).flatMap((result) => [
+  return (report.Results ?? []).filter((result) => !isGeneratedDependencyTarget(result.Target)).flatMap((result) => [
     ...(result.Vulnerabilities ?? []).map((vulnerability) => normalizeVulnerability(result, vulnerability)),
     ...(result.Misconfigurations ?? []).map((misconfiguration) => normalizeMisconfiguration(result, misconfiguration))
   ]);
+}
+
+/**
+ * Trivy can follow pnpm links after its own skip globs are applied. Do not
+ * publish findings for installed package contents: they are not user-owned
+ * source, while root manifests and lockfiles remain scanned for dependency
+ * vulnerabilities.
+ */
+function isGeneratedDependencyTarget(target: string): boolean {
+  return /(^|[/\\])node_modules(?:[/\\]|$)/.test(target);
 }
 
 function normalizeVulnerability(result: TrivyResult, vulnerability: TrivyVulnerability): FindingInput {
