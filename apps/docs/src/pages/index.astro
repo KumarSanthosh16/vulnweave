@@ -1,12 +1,13 @@
 ---
 import DocsLayout from "../layouts/DocsLayout.astro";
+const base = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
 ---
 <DocsLayout title="Documentation" description="Learn what VulnWeave does, why it exists, and how to run your first local scan.">
   <section class="hero">
     <p class="eyebrow">OPEN-SOURCE · LOCAL-FIRST</p>
     <h1>Security feedback your team can actually act on.</h1>
     <p class="lede">VulnWeave brings trusted code-security tools into one local workflow. It shows what was found, what overlaps, what changed, and what deserves attention first—without uploading your source code.</p>
-    <div class="hero-actions"><a class="button primary" href="/getting-started/">Run your first scan <span>→</span></a><a class="button" href="/guides/reading-results/">See how results work</a></div>
+    <div class="hero-actions"><a class="button primary" href={`${base}getting-started/`}>Run your first scan <span>→</span></a><a class="button" href={`${base}guides/reading-results/`}>See how results work</a></div>
   </section>
   <section class="trust-strip" aria-label="Product principles">
     <div><strong>Local</strong><span>Source and scan history stay on your machine.</span></div>
@@ -29,7 +30,7 @@ import DocsLayout from "../layouts/DocsLayout.astro";
     </div>
   </section>
   <section class="doc-section split-card">
-    <div><p class="eyebrow">START HERE</p><h2>New to security tooling?</h2><p>Follow a guided first scan. It explains the required tools, creates safe starter policy files, and shows how to read a report.</p><a class="text-link" href="/getting-started/">Get started in five steps →</a></div>
+    <div><p class="eyebrow">START HERE</p><h2>New to security tooling?</h2><p>Follow a guided first scan. It explains the required tools, creates safe starter policy files, and shows how to read a report.</p><a class="text-link" href={`${base}getting-started/`}>Get started in five steps →</a></div>
     <pre aria-label="First scan command"><code>pnpm cli -- init .&#10;pnpm cli -- doctor&#10;pnpm cli -- scan .</code></pre>
   </section>
 </DocsLayout>

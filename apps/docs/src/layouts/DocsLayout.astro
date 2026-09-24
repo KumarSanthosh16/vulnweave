@@ -4,6 +4,8 @@ import "../styles/global.css";
 interface Props { title: string; description: string; }
 const { title, description } = Astro.props;
 const path = Astro.url.pathname;
+const base = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+const withBase = (href: string) => href === "/" ? base : `${base}${href.slice(1)}`;
 const nav = [
   { label: "START HERE", links: [["/", "Overview"], ["/getting-started/", "Get started"]] },
   { label: "GUIDES", links: [["/guides/reading-results/", "Read results"], ["/guides/ci-and-reports/", "CI and reports"], ["/guides/reviewing-changes/", "Review changes"]] },
@@ -21,14 +23,14 @@ const nav = [
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="/" aria-label="VulnWeave documentation home"><img class="brand-logo" src="/vulnweave-logo.svg" alt="VulnWeave" /></a>
+      <a class="brand" href={base} aria-label="VulnWeave documentation home"><img class="brand-logo" src={`${base}vulnweave-logo.svg`} alt="VulnWeave" /></a>
       <span class="header-note">LOCAL-FIRST SECURITY</span>
       <a class="repo-link" href="https://github.com/KumarSanthosh16/vulnweave">GitHub <span aria-hidden="true">↗</span></a>
     </header>
     <div class="site-shell">
       <aside class="sidebar" aria-label="Documentation navigation">
         <p class="sidebar-label">DOCUMENTATION</p>
-        <nav>{nav.map((group) => <div class="nav-group"><p>{group.label}</p>{group.links.map(([href, label]) => <a class:list={{ active: path === href }} href={href}>{label}</a>)}</div>)}</nav>
+        <nav>{nav.map((group) => <div class="nav-group"><p>{group.label}</p>{group.links.map(([href, label]) => <a class:list={{ active: path === href || path === withBase(href) }} href={withBase(href)}>{label}</a>)}</div>)}</nav>
         <div class="sidebar-callout"><span class="dot"></span><p><strong>Private by default.</strong><br />Scans and history remain on your machine.</p></div>
       </aside>
       <main class="content"><slot /></main>
