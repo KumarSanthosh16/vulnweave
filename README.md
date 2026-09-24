@@ -1,5 +1,9 @@
 # VulnWeave
 
+<p align="center">
+  <img src="apps/docs/public/vulnweave-logo.png" alt="VulnWeave" width="360" />
+</p>
+
 Licensed under the [Apache License 2.0](LICENSE). The local CLI and core are open source; any future hosted or enterprise products may be offered under separate commercial terms.
 
 VulnWeave is a local-first security and code-impact analysis tool. It runs trusted open-source scanners against a repository, combines their results into one consistent view, removes duplicate dependency alerts, and helps developers decide what needs attention first.
