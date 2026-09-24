@@ -1,7 +1,7 @@
 # VulnWeave
 
 <p align="center">
-  <img src="apps/docs/public/vulnweave-logo.png" alt="VulnWeave" width="360" />
+  <img src="apps/docs/public/vulnweave-logo.svg" alt="VulnWeave" width="360" />
 </p>
 
 Licensed under the [Apache License 2.0](LICENSE). The local CLI and core are open source; any future hosted or enterprise products may be offered under separate commercial terms.

@@ -9,6 +9,7 @@ test("renders a self-contained report and escapes finding text", () => {
   assert.match(html, /Security posture/);
   assert.match(html, /Analyzer coverage/);
   assert.match(html, /Generated locally by VulnWeave/);
+  assert.match(html, /data:image\/svg\+xml;base64,/);
   assert.match(html, /background:#126059;}/);
   assert.match(html, /--accent:#0FCFB2/);
   assert.match(html, /&lt;unsafe&gt;/);
