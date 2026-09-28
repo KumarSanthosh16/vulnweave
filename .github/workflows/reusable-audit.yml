@@ -1,0 +1,79 @@
+name: VulnWeave reusable audit
+
+on:
+  workflow_call:
+    inputs:
+      fail-on:
+        description: Severity at which the security gate fails.
+        required: false
+        type: string
+        default: high
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository to audit
+        uses: actions/checkout@v4
+        with:
+          path: target
+          fetch-depth: 0
+      - name: Check out VulnWeave
+        uses: actions/checkout@v4
+        with:
+          repository: KumarSanthosh16/vulnweave
+          ref: main
+          path: tool
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.3.4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: tool/pnpm-lock.yaml
+      - name: Install and build VulnWeave
+        working-directory: tool
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+      - name: Install Semgrep
+        run: pipx install semgrep
+      - name: Install Gitleaks
+        run: |
+          GITLEAKS_VERSION=8.30.1
+          curl --fail --location --silent --show-error "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+      - name: Install OSV-Scanner
+        run: |
+          OSV_VERSION=2.5.1
+          curl --fail --location --silent --show-error "https://github.com/google/osv-scanner/releases/download/v${OSV_VERSION}/osv-scanner_linux_amd64" -o /tmp/osv-scanner
+          install -m 0755 /tmp/osv-scanner /usr/local/bin/osv-scanner
+      - name: Install Trivy
+        run: |
+          TRIVY_VERSION=0.74.0
+          curl --fail --location --silent --show-error "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" -o /tmp/trivy.tar.gz
+          curl --fail --location --silent --show-error "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_checksums.txt" -o /tmp/trivy_checksums.txt
+          grep " trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz$" /tmp/trivy_checksums.txt | sed "s|  trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz$|  /tmp/trivy.tar.gz|" | sha256sum --check --status
+          tar -xzf /tmp/trivy.tar.gz -C /tmp trivy
+          install -m 0755 /tmp/trivy /usr/local/bin/trivy
+      - name: Run the security gate
+        working-directory: tool
+        run: pnpm cli -- ../target --semgrep-config rules/vulnweave-starter.yml --format summary --fail-on "${{ inputs.fail-on }}" --require-analyzers
+      - name: Create HTML report
+        if: always()
+        working-directory: tool
+        run: pnpm cli -- report ../target --semgrep-config rules/vulnweave-starter.yml --no-gate > ../vulnweave-report.html
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vulnweave-report
+          path: vulnweave-report.html
+          if-no-files-found: warn

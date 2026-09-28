@@ -17,7 +17,7 @@ if (args.includes("--version") || args.includes("-V")) {
   process.exit(0);
 }
 if (args.includes("--help") || args.includes("-h")) {
-  console.log(`${friendlyCommandHelp}\n\nAdvanced usage:\n  vulnweave [path] [--analyzer all|mock|gitleaks|osv|semgrep|trivy] [--gitleaks-config rules.toml] [--semgrep-config rules.yml] [--semgrep-pack typescript-security|typescript-quality] [--format json|summary|table|quality|graph|symbols|priorities|hotspots|changes|review|trend|reachability|upgrades|remediation|ownership|explain|sarif|html] [--history N] [--changed-since git-ref] [--review-changes] [--finding id] [--severity level] [--category type] [--filter-analyzer id] [--include-tests] [--top N] [--baseline latest|run-id] [--fail-on info|low|medium|high|critical] [--require-analyzers] [--compare latest|run-id] [--no-save] [--no-gate] [--version]\n\nResults are saved locally under .vulnweave/ unless --no-save is used.`);
+  console.log(`${friendlyCommandHelp}\n\nAdvanced usage:\n  vulnweave [path] [--analyzer all|mock|gitleaks|osv|semgrep|trivy] [--gitleaks-config rules.toml] [--semgrep-config rules.yml] [--semgrep-pack typescript-security|typescript-quality|python-security] [--format json|summary|table|quality|graph|symbols|priorities|hotspots|changes|review|trend|reachability|upgrades|remediation|ownership|explain|sarif|html] [--history N] [--changed-since git-ref] [--review-changes] [--finding id] [--severity level] [--category type] [--filter-analyzer id] [--include-tests] [--top N] [--baseline latest|run-id] [--fail-on info|low|medium|high|critical] [--require-analyzers] [--compare latest|run-id] [--no-save] [--no-gate] [--version]\n\nResults are saved locally under .vulnweave/ unless --no-save is used.`);
   process.exit(0);
 }
 if (args.includes("--init")) {
@@ -239,10 +239,10 @@ function requireCategory(value: string): FindingCategory {
   throw new Error("--category must be security, quality, dependency, secret, or infrastructure");
 }
 
-type SemgrepPack = "typescript-security" | "typescript-quality";
+type SemgrepPack = "typescript-security" | "typescript-quality" | "python-security";
 function requireSemgrepPack(value: string): SemgrepPack {
-  if (value === "typescript-security" || value === "typescript-quality") return value;
-  throw new Error("--semgrep-pack must be typescript-security or typescript-quality");
+  if (value === "typescript-security" || value === "typescript-quality" || value === "python-security") return value;
+  throw new Error("--semgrep-pack must be typescript-security, typescript-quality, or python-security");
 }
 
 function requireValue(values: string[], index: number, option: string): string {

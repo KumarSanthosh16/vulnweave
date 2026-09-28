@@ -9,3 +9,4 @@ apps/docs/.astro/
 vulnweave-report.html
 vulnweave-*-report.html
 vulnweave.sarif
+RELEASE_CHECKLIST.md

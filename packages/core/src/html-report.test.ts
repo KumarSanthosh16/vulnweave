@@ -16,3 +16,11 @@ test("renders a self-contained report and escapes finding text", () => {
   assert.doesNotMatch(html, /<unsafe>/);
   assert.doesNotMatch(html, /\$\{escapeHtml/);
 });
+
+test("renders scanner-reported dependency upgrade context without changing files", () => {
+  const record: ScanRecord = { schemaVersion: 1, id: "run", startedAt: "2026-01-01T00:00:00Z", completedAt: "2026-01-01T00:00:01Z", rootDir: ".", analyzerId: "combined", findings: [{ id: "dep", analyzer: "trivy", ruleId: "CVE-test", category: "dependency", severity: "high", title: "affected package", message: "x", metadata: { package: "example", version: "1.0.0", fixedVersion: "1.0.1", target: "requirements.txt" }, evidence: [] }] };
+  const html = toHtmlReport(record);
+  assert.match(html, /Dependency upgrade plan/);
+  assert.match(html, /upgrade to 1\.0\.1/);
+  assert.match(html, /no files changed/);
+});

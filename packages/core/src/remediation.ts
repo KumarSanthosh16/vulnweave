@@ -33,12 +33,15 @@ function remediationFor(finding: Finding, reachability: DependencyReachability |
     const packageName = metadataText(finding, "package") ?? "the affected package";
     const version = metadataText(finding, "version");
     const fixedVersion = metadataText(finding, "fixedVersion");
+    const sourcePath = metadataText(finding, "sourcePath") ?? metadataText(finding, "target");
+    const advisory = finding.ruleId || "the reported advisory";
     const versionText = version && version !== "unknown" ? ` from ${version}` : "";
     const target = fixedVersion ? ` to ${fixedVersion} or later` : " to a non-affected version identified by the advisory";
     const reachabilityText = reachability?.status === "referenced"
       ? `Static imports were observed in ${reachability.usages.length} indexed file${reachability.usages.length === 1 ? "" : "s"}.`
       : "No indexed JavaScript/TypeScript import was observed; review other languages, dynamic loading, and deployment use before deprioritizing.";
-    return { findingId: finding.id, action: `Upgrade ${packageName}${versionText}${target}, then review compatibility changes.`, verification: `Reinstall dependencies, re-run VulnWeave, and run the affected application's tests.`, rationale: reachabilityText };
+    const manifestText = sourcePath ? ` The scanner located it in ${sourcePath}.` : "";
+    return { findingId: finding.id, action: `Address ${advisory}: upgrade ${packageName}${versionText}${target}, then review compatibility changes.`, verification: `Update the declared dependency, reinstall dependencies, re-run VulnWeave, and run the affected application's tests.`, rationale: `${reachabilityText}${manifestText}` };
   }
   if (finding.category === "secret") {
     return { findingId: finding.id, action: "Treat the value as exposed: revoke or rotate it at its issuer, then remove it from code and move it to approved secret storage.", verification: "Confirm the old credential no longer authenticates, then re-run Gitleaks.", rationale: "VulnWeave intentionally does not retain the secret value in its report." };

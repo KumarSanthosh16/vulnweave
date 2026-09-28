@@ -107,20 +107,35 @@ The `AnalysisOrchestrator` moves one run through `idle → preparing → running
 
 ## Scanner support and architecture
 
-The current adapters are Gitleaks (secrets), Semgrep CE (source patterns), OSV-Scanner (dependency vulnerabilities), and Trivy (filesystem dependencies and configuration). Run `pnpm cli -- doctor` to confirm their availability. Matched secret text is deliberately excluded from normalized results. Semgrep uses local rules; this repository includes `rules/semgrep-starter.yml`, which flags JavaScript/TypeScript `eval` usage. Trivy may overlap OSV on dependency advisories; VulnWeave intentionally keeps their evidence, then correlates the duplicate advisory into one canonical issue.
+The current adapters are Gitleaks (secrets), Semgrep CE (source patterns), OSV-Scanner (dependency vulnerabilities), and Trivy (filesystem dependencies and configuration). Run `pnpm cli -- doctor` to confirm their availability. Matched secret text is deliberately excluded from normalized results. Semgrep uses local rules; this repository includes `rules/semgrep-starter.yml`, which covers JavaScript/TypeScript `eval` plus a small set of high-signal Python patterns. Trivy may overlap OSV on dependency advisories; VulnWeave intentionally keeps their evidence, then correlates the duplicate advisory into one canonical issue.
 
 Each analyzer remains a replaceable worker. Its output converges on the same schema and evidence graph, connecting findings to symbols, files, dependencies, owners, and change impact. This makes the results explainable and creates a safe foundation for later AI-assisted explanation features: any future AI output must cite the scanner evidence rather than invent security claims.
 
 ### Optional local policy packs
 
-The default `semgrep-starter.yml` stays deliberately small. Add a reviewed pack explicitly with `--semgrep-pack typescript-security` (dynamic-code and direct child-process execution checks) or `--semgrep-pack typescript-quality` (diagnostic `console.log` checks). Packs are additive, so this enables the starter policy plus the selected pack:
+The default `semgrep-starter.yml` stays deliberately small. It includes JavaScript/TypeScript `eval` plus Python checks for unsafe subprocess shells, redirect-following requests, and disabled TLS verification. Add a reviewed pack explicitly with `--semgrep-pack typescript-security` (dynamic-code and direct child-process execution checks), `--semgrep-pack typescript-quality` (diagnostic `console.log` checks), or `--semgrep-pack python-security` (the Python starter checks). Packs are additive, so this enables the starter policy plus the selected pack:
 
 ```bash
 pnpm cli -- . --analyzer semgrep --semgrep-pack typescript-security --format table
 pnpm cli -- . --analyzer semgrep --semgrep-pack typescript-quality --format table
+pnpm cli -- . --analyzer semgrep --semgrep-pack python-security --format table
 ```
 
 Pack rules are versioned local YAML under `rules/packs/`, and each finding retains its `vulnweavePack` metadata for provenance. Review and tune local rules before enabling them in a merge gate.
+
+### Reusable GitHub audit
+
+Projects can call the included GitHub Actions workflow without copying scanner-installation steps:
+
+```yaml
+jobs:
+  vulnweave:
+    uses: KumarSanthosh16/vulnweave/.github/workflows/reusable-audit.yml@main
+    with:
+      fail-on: high
+```
+
+It scans the calling repository, applies the gate, and uploads an HTML artifact for triage. Pin to a reviewed release tag or commit SHA for production use rather than tracking `main`.
 
 Tree-sitter belongs beside that graph as a local code-structure provider, not as an analyzer replacement. AI should consume normalized evidence and graph context to explain prioritization or propose remediation; it must not be the source of record for scanner claims.
 
@@ -130,7 +145,7 @@ Tree-sitter belongs beside that graph as a local code-structure provider, not as
 
 ## Safe end-to-end fixture
 
-`fixtures/intentional-findings/` is a tiny, non-production project for manually validating the Semgrep path. It contains no secret-like values, scanner-detectable configuration, or vulnerable package lockfile. The automated suite uses deterministic scanner-shaped observations to exercise Trivy normalization, correlation, evidence graph generation, priority ranking, SARIF output, and gate behavior without relying on scanner downloads or vulnerability databases. The directory is excluded from normal repository-wide Semgrep, Trivy, and source-index scans, so it does not create noise in VulnWeave's own report.
+`fixtures/intentional-findings/` is a tiny, non-production project for manually validating the JavaScript/TypeScript Semgrep path. `fixtures/python-security/` is the equivalent safe-to-share fixture for the Python rules. Neither contains real secrets. The automated suite uses deterministic scanner-shaped observations to exercise Trivy normalization, correlation, evidence graph generation, priority ranking, SARIF output, and gate behavior without relying on scanner downloads or vulnerability databases. Fixture directories are excluded from normal repository-wide Semgrep, Trivy, and source-index scans, so they do not create noise in VulnWeave's own report.
 
 ## Local history and comparison
 
@@ -202,7 +217,7 @@ For a one-off scan, use `pnpm cli -- scan . --gitleaks-config .gitleaks.toml`.
 
 ## Third-party licensing
 
-VulnWeave Core is licensed under Apache-2.0. It invokes Gitleaks, Semgrep Community Edition, OSV-Scanner, and Trivy as separately installed local tools and does not bundle their binaries. Their licenses and the direct runtime/development dependency inventory are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). See [SECURITY.md](SECURITY.md) for the vulnerability-reporting process and [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) before creating a public release. Any future hosted or enterprise offering will be governed by separate commercial terms and must keep a clear boundary from Apache-2.0 core code.
+VulnWeave Core is licensed under Apache-2.0. It invokes Gitleaks, Semgrep Community Edition, OSV-Scanner, and Trivy as separately installed local tools and does not bundle their binaries. Their licenses and the direct runtime/development dependency inventory are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). See [SECURITY.md](SECURITY.md) for the vulnerability-reporting process. Any future hosted or enterprise offering will be governed by separate commercial terms and must keep a clear boundary from Apache-2.0 core code.
 
 The included baseline starts with a high-severity gate and requires all selected analyzers to complete:
 

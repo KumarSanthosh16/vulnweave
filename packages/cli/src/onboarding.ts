@@ -25,6 +25,33 @@ const starterSemgrepRules = `rules:
       technology: [javascript, typescript]
     patterns:
       - pattern: eval(...)
+  - id: vulnweave.python.no-shell-true
+    message: Avoid shell=True with subprocess calls; pass an argument list and validate untrusted input instead.
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: CWE-78
+      technology: [python]
+    pattern: subprocess.$FUNC(..., shell=True, ...)
+  - id: vulnweave.python.redirecting-request
+    message: Review redirecting outbound requests. User-controlled URLs can create SSRF paths.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: CWE-918
+      technology: [python]
+    pattern: requests.$METHOD(..., allow_redirects=True, ...)
+  - id: vulnweave.python.insecure-tls-verification
+    message: Do not disable TLS certificate verification for outbound requests.
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: CWE-295
+      technology: [python]
+    pattern: requests.$METHOD(..., verify=False, ...)
 `;
 
 export interface InitializationResult { created: string[]; existing: string[]; }
