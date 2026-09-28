@@ -34,15 +34,18 @@ export class OsvAnalyzer implements AnalyzerAdapter {
   }
 
   async analyze(request: AnalysisRequest): Promise<FindingInput[]> {
-    const args = ["scan", "source", "--format", "json", "--recursive", request.rootDir];
+    // Dependabot-style dependency coverage must include projects that commit a
+    // manifest without a lockfile (for example Python requirements.txt). OSV's
+    // defaults can otherwise reject or reduce coverage for those projects.
+    const args = ["scan", "source", "--format", "json", "--recursive", "--allow-no-lockfiles", "--all-vulns", "--verbosity", "error", request.rootDir];
     try {
-      return parseOsvReport(JSON.parse(await this.runCommand(args)) as OsvReport);
+      return parseOsvReport(parseOsvOutput(await this.runCommand(args)));
     } catch (error) {
       // OSV-Scanner exits 1 when it found vulnerable packages. Its JSON output
       // remains a successful scan result, not an unavailable analyzer.
       const stdout = outputFromFindingExit(error);
       if (stdout === undefined) throw error;
-      return parseOsvReport(JSON.parse(stdout) as OsvReport);
+      return parseOsvReport(parseOsvOutput(stdout));
     }
   }
 }
@@ -55,6 +58,21 @@ async function runOsvCommand(args: string[]): Promise<string> {
 function outputFromFindingExit(error: unknown): string | undefined {
   if (typeof error !== "object" || error === null || !("code" in error) || error.code !== 1 || !("stdout" in error)) return undefined;
   return typeof error.stdout === "string" ? error.stdout : undefined;
+}
+
+/** A scan that produces no machine-readable report has unknown coverage, never zero findings. */
+function parseOsvOutput(output: string): OsvReport {
+  if (output.trim().length === 0) {
+    throw new Error("OSV-Scanner returned no JSON report; dependency coverage could not be established.");
+  }
+  try {
+    const report = JSON.parse(output) as OsvReport;
+    if (!Array.isArray(report.results)) throw new Error("missing results array");
+    return report;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`OSV-Scanner returned an invalid JSON report; dependency coverage could not be established (${detail}).`);
+  }
 }
 
 /** Normalizes OSV's package-centric report into one finding per affected package/advisory. */

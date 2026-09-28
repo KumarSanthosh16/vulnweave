@@ -19,3 +19,20 @@ test("retains OSV findings when the scanner exits one", async () => {
   assert.equal(findings.length, 1);
   assert.equal(findings[0]?.ruleId, "GHSA-test");
 });
+
+test("covers a requirements manifest without a lockfile and requests all advisories", async () => {
+  const report = { results: [{ source: { path: "testBE/requirements.txt", type: "manifest" }, packages: [{ package: { name: "python-multipart", version: "0.0.6", ecosystem: "PyPI" }, vulnerabilities: [{ id: "GHSA-2jv5-9r88-3w3p", database_specific: { severity: "HIGH" } }] }] }] };
+  let receivedArgs: string[] = [];
+  const analyzer = new OsvAnalyzer(async (args) => {
+    receivedArgs = args;
+    return JSON.stringify(report);
+  });
+  const findings = await analyzer.analyze({ rootDir: "repo" });
+  assert.deepEqual(receivedArgs, ["scan", "source", "--format", "json", "--recursive", "--allow-no-lockfiles", "--all-vulns", "--verbosity", "error", "repo"]);
+  assert.equal(findings[0]?.title, "python-multipart@0.0.6 is affected by GHSA-2jv5-9r88-3w3p");
+});
+
+test("does not treat an empty OSV response as a clean dependency scan", async () => {
+  const analyzer = new OsvAnalyzer(async () => "");
+  await assert.rejects(() => analyzer.analyze({ rootDir: "." }), /dependency coverage could not be established/);
+});

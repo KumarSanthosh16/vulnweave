@@ -35,7 +35,7 @@ export function expandFriendlyCommand(values: string[]): string[] {
 
 export const friendlyCommandHelp = `Friendly commands:
   vulnweave init [path]                 Create safe starter policy files
-  vulnweave scan [path]                 Scan with project defaults
+  vulnweave scan [path]                 Scan with configured or all local analyzers
   vulnweave report [path]               Print a self-contained HTML report
   vulnweave findings [path]             List findings as a table
   vulnweave quality [path]              Show duplicate-code and complexity signals

@@ -49,7 +49,7 @@ pnpm cli -- quality .
 pnpm cli -- report . > vulnweave-report.html
 ```
 
-Open `vulnweave-report.html` locally to view the dashboard. The project configuration (`vulnweave.config.json`) selects the analyzers and rules; `vulnweave.baseline.json` defines the reviewable gate policy. Scan history is stored locally in `.vulnweave/` and is ignored by Git.
+Open `vulnweave-report.html` locally to view the dashboard. Without a project configuration, `scan .` runs all available real analyzers; use `"analyzer"` in `vulnweave.config.json` to select a subset. OSV-Scanner covers committed manifests and lockfiles, including manifest-only Python projects using `requirements.txt`, and reports incomplete dependency coverage as analyzer failure rather than a clean result. `vulnweave.baseline.json` defines the reviewable gate policy. Scan history is stored locally in `.vulnweave/` and is ignored by Git.
 
 `init` never overwrites existing policy files. It creates a starter configuration, a High-severity baseline policy, and a small Semgrep rule file for projects that do not already have them. Review these files before committing them to a repository.
 

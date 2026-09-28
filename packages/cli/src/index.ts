@@ -200,7 +200,9 @@ async function resolveOptions(parsed: ParsedOptions): Promise<ResolvedOptions> {
   const baselinePolicy = await loadBaselinePolicy(parsed.rootDir, config?.baselinePolicy ?? "vulnweave.baseline.json");
   return {
     ...parsed,
-    analyzer: parsed.analyzer ?? config?.analyzer ?? "mock",
+    // A user scanning an existing repository expects real coverage. The mock
+    // adapter remains available only when explicitly requested for examples.
+    analyzer: parsed.analyzer ?? config?.analyzer ?? "all",
     gitleaksConfig: parsed.gitleaksConfig ?? (config?.gitleaksConfig ? resolve(parsed.rootDir, config.gitleaksConfig) : undefined),
     quality: config?.quality,
     qualityGate: config?.qualityGate,
