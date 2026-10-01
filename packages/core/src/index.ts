@@ -9,6 +9,7 @@ export * from "./correlation.js";
 export * from "./dependency-reachability.js";
 export * from "./evidence-graph.js";
 export * from "./explanation.js";
+export * from "./finding-baseline.js";
 export * from "./impact-ranking.js";
 export * from "./impact-surface.js";
 export * from "./git-context.js";

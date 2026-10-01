@@ -1,0 +1,58 @@
+{
+  "name": "dependency-correlation-and-python-requirements",
+  "description": "Scanner-shaped observations for a manifest-only Python dependency. No live advisory service or vulnerable project is required.",
+  "findings": [
+    {
+      "id": "osv:GHSA-benchmark",
+      "analyzer": "osv",
+      "ruleId": "GHSA-benchmark",
+      "category": "dependency",
+      "severity": "medium",
+      "title": "benchmark-package is affected",
+      "message": "OSV observation",
+      "metadata": {
+        "package": "benchmark-package",
+        "version": "1.0.0",
+        "ecosystem": "PyPI",
+        "sourcePath": "requirements.txt",
+        "aliases": "CVE-2026-9999"
+      },
+      "evidence": [{ "id": "osv-evidence", "kind": "dependency", "summary": "OSV found the requirement declaration." }]
+    },
+    {
+      "id": "trivy:CVE-2026-9999",
+      "analyzer": "trivy",
+      "ruleId": "CVE-2026-9999",
+      "category": "dependency",
+      "severity": "high",
+      "title": "benchmark-package is affected",
+      "message": "Trivy observation",
+      "references": ["https://example.invalid/advisories/CVE-2026-9999"],
+      "metadata": {
+        "package": "benchmark-package",
+        "version": "1.0.0",
+        "ecosystem": "PyPI",
+        "target": "requirements.txt",
+        "fixedVersion": "1.0.1"
+      },
+      "evidence": [{ "id": "trivy-evidence", "kind": "dependency", "summary": "Trivy found the requirement declaration." }]
+    },
+    {
+      "id": "semgrep:python-shell",
+      "analyzer": "semgrep",
+      "ruleId": "vulnweave.python.no-shell-true",
+      "category": "security",
+      "severity": "high",
+      "title": "Avoid shell=True",
+      "message": "Semgrep observation",
+      "location": { "path": "app.py", "startLine": 8, "startColumn": 5 },
+      "evidence": [{ "id": "semgrep-evidence", "kind": "source", "summary": "Semgrep matched shell=True." }]
+    }
+  ],
+  "expected": {
+    "sourceObservations": 3,
+    "canonicalFindings": 2,
+    "dependencyEvidence": 2,
+    "fixedVersion": "1.0.1"
+  }
+}

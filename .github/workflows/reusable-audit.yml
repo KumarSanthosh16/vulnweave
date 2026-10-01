@@ -8,6 +8,11 @@ on:
         required: false
         type: string
         default: high
+      baseline-file:
+        description: Optional committed finding-baseline JSON, relative to the repository root.
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -65,7 +70,17 @@ jobs:
           install -m 0755 /tmp/trivy /usr/local/bin/trivy
       - name: Run the security gate
         working-directory: tool
-        run: pnpm cli -- ../target --semgrep-config rules/vulnweave-starter.yml --format summary --fail-on "${{ inputs.fail-on }}" --require-analyzers
+        env:
+          VULNWEAVE_BASELINE_FILE: ${{ inputs.baseline-file }}
+        run: |
+          baseline_args=()
+          if [ -n "$VULNWEAVE_BASELINE_FILE" ]; then
+            case "$VULNWEAVE_BASELINE_FILE" in
+              /*|*..*) echo "baseline-file must be a relative path inside the repository" >&2; exit 2 ;;
+            esac
+            baseline_args=(--baseline-file "../target/$VULNWEAVE_BASELINE_FILE")
+          fi
+          pnpm cli -- ../target --semgrep-config rules/vulnweave-starter.yml --format summary --fail-on "${{ inputs.fail-on }}" --require-analyzers "${baseline_args[@]}"
       - name: Create HTML report
         if: always()
         working-directory: tool

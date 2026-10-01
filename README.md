@@ -153,6 +153,17 @@ Every CLI scan is saved locally under `.vulnweave/runs/`; the most recent scan i
 
 Run the available real analyzers together with `pnpm cli -- . --analyzer all --semgrep-config rules/semgrep-starter.yml --format summary`. A failed or unavailable scanner is recorded in the summary and does not prevent the other scanners from producing findings. For CI, add `--require-analyzers`: this exits unsuccessfully if any selected analyzer is unavailable or fails, independently of the finding-severity gate.
 
+### New-findings CI baseline
+
+For a legacy repository, create and review a portable baseline snapshot, then commit it alongside the project policy:
+
+```bash
+pnpm cli -- baseline . --analyzer all > vulnweave.findings-baseline.json
+pnpm cli -- scan . --baseline-file vulnweave.findings-baseline.json --fail-on high --require-analyzers
+```
+
+The baseline does not hide existing findings or act as a suppression. It only makes the gate evaluate new scanner fingerprints, so teams can adopt VulnWeave without accepting newly introduced high-severity issues. Update it through normal code review when an existing issue is fixed or explicitly accepted.
+
 ## Installation diagnostics
 
 Run `pnpm cli -- --version` to show the VulnWeave version and whether Gitleaks, Semgrep, OSV-Scanner, and Trivy are installed. This is read-only and does not scan the current project.
@@ -275,11 +286,15 @@ For dependency findings, `pnpm cli -- . --format reachability` identifies whethe
 
 ## Dependency upgrade planning
 
-Use `pnpm cli -- . --format upgrades` to turn dependency findings into a non-mutating upgrade plan. When Trivy reports a fixed version, the plan shows it alongside the installed version and indexed import count. When no scanner-reported fixed version exists, the plan clearly requests manual advisory review rather than guessing a target version. It never edits lockfiles or packages.
+Use `pnpm cli -- . --format upgrades` to turn dependency findings into a non-mutating upgrade plan. When Trivy reports a fixed version, the plan shows it alongside the installed version, reported manifest, ecosystem-aware next step, and indexed import count. Python <code>requirements.txt</code> findings explain that the environment or lockfile must be recreated; npm findings explain that the lockfile must be regenerated. When no scanner-reported fixed version exists, the plan clearly requests manual advisory review rather than guessing a target version. It never edits lockfiles or packages.
 
 ## Remediation guidance
 
 Use `pnpm cli -- . --format remediation` for deterministic next-step guidance. It derives an advisory from the normalized finding: dependency findings use the package and fixed-version evidence when available; secret findings recommend rotation without exposing matched text; source and configuration findings retain their reported location. Guidance never changes code, dependencies, credentials, or configuration. It is also included in the local HTML report.
+
+## Release benchmark
+
+`fixtures/benchmarks/dependency-correlation.json` is a scanner-shaped benchmark for a manifest-only Python dependency. The test validates that OSV and Trivy evidence is correlated into one canonical advisory, a scanner-reported fixed version is preserved, and the upgrade plan identifies `requirements.txt` without relying on a live vulnerability service. It is intentionally deterministic so a network outage or an advisory-database update cannot make the product test suite pass or fail unpredictably.
 
 ## Local ownership routing
 
