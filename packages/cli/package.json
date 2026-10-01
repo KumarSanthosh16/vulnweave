@@ -1,6 +1,6 @@
 {
   "name": "@vulnweave/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Local-first security and code-quality impact analysis",
   "keywords": ["security", "sast", "sca", "code-quality", "semgrep", "trivy"],
   "homepage": "https://kumarsanthosh16.github.io/vulnweave/",

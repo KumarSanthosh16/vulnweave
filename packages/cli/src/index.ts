@@ -16,7 +16,7 @@ const args = expandFriendlyCommand(process.argv.slice(2));
 // them from this module keeps a scan of a sibling or external checkout usable.
 const bundledPackDirectory = fileURLToPath(new URL("../rules/packs/", import.meta.url));
 if (args.includes("--version") || args.includes("-V")) {
-  const version = process.env.npm_package_version ?? "0.1.0";
+  const version = process.env.npm_package_version ?? "0.2.0";
   console.log(formatVersionReport(version, await inspectToolVersions()));
   process.exit(0);
 }

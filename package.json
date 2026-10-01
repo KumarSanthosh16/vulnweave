@@ -1,7 +1,7 @@
 {
   "name": "vulnweave",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "Apache-2.0",
   "description": "Local-first code quality and security impact analysis",
   "packageManager": "pnpm@12.3.4",

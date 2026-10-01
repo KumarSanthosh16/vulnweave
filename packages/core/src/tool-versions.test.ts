@@ -14,5 +14,5 @@ test("reports installed and unavailable analyzers without making a scan", async 
     { id: "available", displayName: "Available", version: "Available 1.2.3", available: true },
     { id: "missing", displayName: "Missing", available: false }
   ]);
-  assert.match(formatVersionReport("0.1.0", tools), /VulnWeave 0.1.0[\s\S]*Missing: not installed/);
+  assert.match(formatVersionReport("0.2.0", tools), /VulnWeave 0.2.0[\s\S]*Missing: not installed/);
 });

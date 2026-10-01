@@ -2,7 +2,25 @@
 
 All notable changes to VulnWeave are documented here.
 
-## 0.1.0 — Unreleased
+## 0.2.0 — Unreleased
+
+### Added
+
+- Portable finding-baseline files for new-findings-only CI gates.
+- Scanner-reported dependency upgrade plans and ecosystem-aware guidance for Python requirements and npm manifests.
+- Focused local Semgrep packs for Python and Node web-service settings, with safe fixtures.
+- An npm-ready `@vulnweave/cli` package that bundles the CLI, reviewed rules, and required legal notices while keeping scanner binaries external.
+
+### Changed
+
+- The public documentation now includes npm installation guidance and continues to document source-checkout use for contributors.
+- Named Semgrep packs resolve from VulnWeave itself, so they work when scanning another checkout.
+
+### Compatibility
+
+- Requires Node.js 20 or later, pnpm 12 for source development, and separately installed supported analyzers.
+
+## 0.1.0
 
 ### Added
 
@@ -17,7 +35,3 @@ All notable changes to VulnWeave are documented here.
 
 - Source code and saved scan history remain local unless a user explicitly exports an artifact.
 - Normalized secret findings deliberately omit matched secret values.
-
-### Compatibility
-
-- Requires Node.js 22, pnpm 12, and separately installed supported analyzers.
