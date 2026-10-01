@@ -37,7 +37,21 @@ VulnWeave does not replace security review, penetration testing, or the scanners
 
 ## Quick start
 
-This repository is currently run from a source checkout. Install the required scanner binaries—Gitleaks, Semgrep, OSV-Scanner, and Trivy—then install the workspace dependencies:
+VulnWeave requires Node.js 20 or later and the scanner binaries you choose to use—Gitleaks, Semgrep, OSV-Scanner, and Trivy. The npm package bundles the VulnWeave CLI and reviewed local rule packs; it does not bundle scanner binaries or vulnerability databases.
+
+When the package is published to npm, install it with:
+
+```bash
+npm install --global @vulnweave/cli
+vulnweave doctor
+vulnweave init .
+vulnweave scan .
+vulnweave findings .
+vulnweave quality .
+vulnweave report . > vulnweave-report.html
+```
+
+Until a published npm version is available, run from a source checkout instead:
 
 ```bash
 pnpm install
@@ -56,10 +70,10 @@ Open `vulnweave-report.html` locally to view the dashboard. Without a project co
 For continuous integration, use:
 
 ```bash
-pnpm cli -- ci .
+vulnweave ci .
 ```
 
-The command exits unsuccessfully when findings violate the configured policy or a required analyzer is unavailable. That is intended behavior for a security gate.
+From a source checkout, use `pnpm cli -- ci .` instead. The command exits unsuccessfully when findings violate the configured policy or a required analyzer is unavailable. That is intended behavior for a security gate.
 
 ## Documentation
 
@@ -113,12 +127,14 @@ Each analyzer remains a replaceable worker. Its output converges on the same sch
 
 ### Optional local policy packs
 
-The default `semgrep-starter.yml` stays deliberately small. It includes JavaScript/TypeScript `eval` plus Python checks for unsafe subprocess shells, redirect-following requests, and disabled TLS verification. Add a reviewed pack explicitly with `--semgrep-pack typescript-security` (dynamic-code and direct child-process execution checks), `--semgrep-pack typescript-quality` (diagnostic `console.log` checks), or `--semgrep-pack python-security` (the Python starter checks). Packs are additive, so this enables the starter policy plus the selected pack:
+The default `semgrep-starter.yml` stays deliberately small. It includes JavaScript/TypeScript `eval` plus Python checks for unsafe subprocess shells, redirect-following requests, and disabled TLS verification. Add a reviewed pack explicitly with `--semgrep-pack typescript-security` (dynamic-code and direct child-process execution checks), `--semgrep-pack typescript-quality` (diagnostic `console.log` checks), `--semgrep-pack python-security` (the Python starter checks), `--semgrep-pack python-web-security` (debug servers and unverified TLS contexts), or `--semgrep-pack node-web-security` (unrestricted Express-style CORS and globally disabled Node TLS verification). Packs are additive, so this enables the starter policy plus the selected pack:
 
 ```bash
 pnpm cli -- . --analyzer semgrep --semgrep-pack typescript-security --format table
 pnpm cli -- . --analyzer semgrep --semgrep-pack typescript-quality --format table
 pnpm cli -- . --analyzer semgrep --semgrep-pack python-security --format table
+pnpm cli -- . --analyzer semgrep --semgrep-pack python-web-security --format table
+pnpm cli -- . --analyzer semgrep --semgrep-pack node-web-security --format table
 ```
 
 Pack rules are versioned local YAML under `rules/packs/`, and each finding retains its `vulnweavePack` metadata for provenance. Review and tune local rules before enabling them in a merge gate.
@@ -145,7 +161,7 @@ Tree-sitter belongs beside that graph as a local code-structure provider, not as
 
 ## Safe end-to-end fixture
 
-`fixtures/intentional-findings/` is a tiny, non-production project for manually validating the JavaScript/TypeScript Semgrep path. `fixtures/python-security/` is the equivalent safe-to-share fixture for the Python rules. Neither contains real secrets. The automated suite uses deterministic scanner-shaped observations to exercise Trivy normalization, correlation, evidence graph generation, priority ranking, SARIF output, and gate behavior without relying on scanner downloads or vulnerability databases. Fixture directories are excluded from normal repository-wide Semgrep, Trivy, and source-index scans, so they do not create noise in VulnWeave's own report.
+`fixtures/intentional-findings/` is a tiny, non-production project for manually validating the JavaScript/TypeScript Semgrep path. `fixtures/python-security/`, `fixtures/python-web-security/`, and `fixtures/node-web-security/` are safe-to-share fixtures for the Python and Node web packs. None contains real secrets. The automated suite uses deterministic scanner-shaped observations to exercise Trivy normalization, correlation, evidence graph generation, priority ranking, SARIF output, and gate behavior without relying on scanner downloads or vulnerability databases. Fixture directories are excluded from normal repository-wide Semgrep, Trivy, and source-index scans, so they do not create noise in VulnWeave's own report.
 
 ## Local history and comparison
 

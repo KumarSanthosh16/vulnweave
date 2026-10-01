@@ -153,6 +153,16 @@ importers:
 
   packages/cli:
     dependencies:
+      tree-sitter:
+        specifier: ^0.25.0
+        version: 0.25.1
+      tree-sitter-javascript:
+        specifier: ^0.25.0
+        version: 0.25.0(tree-sitter@0.25.1)
+      tree-sitter-typescript:
+        specifier: ^0.23.2
+        version: 0.23.2(tree-sitter@0.25.1)
+    devDependencies:
       '@vulnweave/core':
         specifier: workspace:*
         version: link:../core
@@ -174,6 +184,9 @@ importers:
       '@vulnweave/trivy-analyzer':
         specifier: workspace:*
         version: link:../trivy-analyzer
+      esbuild:
+        specifier: ^0.28.2
+        version: 0.28.2
 
   packages/core: {}
 

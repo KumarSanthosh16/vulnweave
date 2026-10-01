@@ -4,6 +4,10 @@ dist/
 apps/docs/.astro/
 .DS_Store
 *.tsbuildinfo
+packages/cli/rules/
+packages/cli/LICENSE
+packages/cli/NOTICE
+packages/cli/THIRD_PARTY_NOTICES.md
 .signal-impact/
 .vulnweave/
 vulnweave-report.html

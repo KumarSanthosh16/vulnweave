@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { AnalysisOrchestrator, analyzeChangeImpact, applySuppressions, assessDependencyReachability, assignFindingOwners, buildDependencyUpgradePlan, buildEvidenceGraph, buildFindingBaseline, buildRemediationAdvice, buildScanTrend, changedPaths, changedPathsSince, compareFindingsToBaseline, compareScanRecords, correlateFindings, evaluateAnalyzerHealth, evaluateGate, evaluateQualityGate, filterFindings, findingsInChangeScope, formatAnalyzerHealth, formatChangeImpact, formatDependencyReachability, formatDependencyUpgradePlan, formatFindingBaseline, formatFindingExplanation, formatFindingsTable, formatGateResult, formatGraphSummary, formatHotspotTable, formatOwnershipTable, formatPriorityTable, formatQualityGate, formatQualityTable, formatRemediationTable, formatReviewPacket, formatScanSummary, formatScanTrend, formatVersionReport, inspectToolVersions, linkFindingsToSymbols, listScanRecords, loadBaselinePolicy, loadCodeOwners, loadFindingBaseline, loadProjectConfig, loadScanRecord, rankFileHotspots, rankFindings, runAnalyzers, saveScanRecord, toHtmlReport, toSarif, type FindingCategory, type FindingSuppression, type Severity } from "@vulnweave/core";
 import { GitleaksAnalyzer } from "@vulnweave/gitleaks-analyzer";
 import { MockAnalyzer } from "@vulnweave/mock-analyzer";
@@ -11,13 +12,16 @@ import { expandFriendlyCommand, friendlyCommandHelp } from "./friendly-commands.
 import { formatInitialization, initializeProject } from "./onboarding.js";
 
 const args = expandFriendlyCommand(process.argv.slice(2));
+// Packs belong to VulnWeave, not to the repository under analysis. Resolving
+// them from this module keeps a scan of a sibling or external checkout usable.
+const bundledPackDirectory = fileURLToPath(new URL("../rules/packs/", import.meta.url));
 if (args.includes("--version") || args.includes("-V")) {
   const version = process.env.npm_package_version ?? "0.1.0";
   console.log(formatVersionReport(version, await inspectToolVersions()));
   process.exit(0);
 }
 if (args.includes("--help") || args.includes("-h")) {
-  console.log(`${friendlyCommandHelp}\n\nAdvanced usage:\n  vulnweave [path] [--analyzer all|mock|gitleaks|osv|semgrep|trivy] [--gitleaks-config rules.toml] [--semgrep-config rules.yml] [--semgrep-pack typescript-security|typescript-quality|python-security] [--format json|summary|table|quality|graph|symbols|priorities|hotspots|changes|review|trend|reachability|upgrades|remediation|ownership|explain|sarif|html|baseline] [--history N] [--changed-since git-ref] [--review-changes] [--finding id] [--severity level] [--category type] [--filter-analyzer id] [--include-tests] [--top N] [--baseline latest|run-id] [--baseline-file baseline.json] [--fail-on info|low|medium|high|critical] [--require-analyzers] [--compare latest|run-id] [--no-save] [--no-gate] [--version]\n\nResults are saved locally under .vulnweave/ unless --no-save is used.`);
+  console.log(`${friendlyCommandHelp}\n\nAdvanced usage:\n  vulnweave [path] [--analyzer all|mock|gitleaks|osv|semgrep|trivy] [--gitleaks-config rules.toml] [--semgrep-config rules.yml] [--semgrep-pack typescript-security|typescript-quality|python-security|python-web-security|node-web-security] [--format json|summary|table|quality|graph|symbols|priorities|hotspots|changes|review|trend|reachability|upgrades|remediation|ownership|explain|sarif|html|baseline] [--history N] [--changed-since git-ref] [--review-changes] [--finding id] [--severity level] [--category type] [--filter-analyzer id] [--include-tests] [--top N] [--baseline latest|run-id] [--baseline-file baseline.json] [--fail-on info|low|medium|high|critical] [--require-analyzers] [--compare latest|run-id] [--no-save] [--no-gate] [--version]\n\nResults are saved locally under .vulnweave/ unless --no-save is used.`);
   process.exit(0);
 }
 if (args.includes("--init")) {
@@ -212,7 +216,7 @@ async function resolveOptions(parsed: ParsedOptions): Promise<ResolvedOptions> {
     gitleaksConfig: parsed.gitleaksConfig ?? (config?.gitleaksConfig ? resolve(parsed.rootDir, config.gitleaksConfig) : undefined),
     quality: config?.quality,
     qualityGate: config?.qualityGate,
-    semgrepConfig: [...(parsed.semgrepConfig ?? (config?.semgrepConfig ? [resolve(parsed.rootDir, config.semgrepConfig)] : [])), ...parsed.semgrepPacks.map((pack) => resolve(parsed.rootDir, "rules", "packs", `${pack}.yml`))],
+    semgrepConfig: [...(parsed.semgrepConfig ?? (config?.semgrepConfig ? [resolve(parsed.rootDir, config.semgrepConfig)] : [])), ...parsed.semgrepPacks.map((pack) => resolve(bundledPackDirectory, `${pack}.yml`))],
     failOn: parsed.failOn ?? config?.failOn ?? baselinePolicy?.failOn,
     requireAnalyzers: parsed.requireAnalyzers || (parsed.analyzer === undefined && (config?.requireAnalyzers === true || baselinePolicy?.requireAnalyzers === true)),
     suppressions: [...(baselinePolicy?.suppressions ?? []), ...(config?.suppressions ?? [])]
@@ -245,10 +249,10 @@ function requireCategory(value: string): FindingCategory {
   throw new Error("--category must be security, quality, dependency, secret, or infrastructure");
 }
 
-type SemgrepPack = "typescript-security" | "typescript-quality" | "python-security";
+type SemgrepPack = "typescript-security" | "typescript-quality" | "python-security" | "python-web-security" | "node-web-security";
 function requireSemgrepPack(value: string): SemgrepPack {
-  if (value === "typescript-security" || value === "typescript-quality" || value === "python-security") return value;
-  throw new Error("--semgrep-pack must be typescript-security, typescript-quality, or python-security");
+  if (value === "typescript-security" || value === "typescript-quality" || value === "python-security" || value === "python-web-security" || value === "node-web-security") return value;
+  throw new Error("--semgrep-pack must be typescript-security, typescript-quality, python-security, python-web-security, or node-web-security");
 }
 
 function requireValue(values: string[], index: number, option: string): string {

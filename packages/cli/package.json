@@ -1,10 +1,38 @@
 {
   "name": "@vulnweave/cli",
   "version": "0.1.0",
+  "description": "Local-first security and code-quality impact analysis",
+  "keywords": ["security", "sast", "sca", "code-quality", "semgrep", "trivy"],
+  "homepage": "https://kumarsanthosh16.github.io/vulnweave/",
+  "repository": { "type": "git", "url": "git+https://github.com/KumarSanthosh16/vulnweave.git" },
+  "bugs": { "url": "https://github.com/KumarSanthosh16/vulnweave/issues" },
   "license": "Apache-2.0",
-  "private": true,
   "type": "module",
+  "engines": { "node": ">=20" },
   "bin": { "vulnweave": "./dist/index.js" },
-  "scripts": { "build": "tsc -p tsconfig.json", "check": "tsc --noEmit -p tsconfig.json", "test": "node --import tsx --test", "start": "tsx src/index.ts" },
-  "dependencies": { "@vulnweave/core": "workspace:*", "@vulnweave/gitleaks-analyzer": "workspace:*", "@vulnweave/mock-analyzer": "workspace:*", "@vulnweave/osv-analyzer": "workspace:*", "@vulnweave/semgrep-analyzer": "workspace:*", "@vulnweave/tree-sitter-indexer": "workspace:*", "@vulnweave/trivy-analyzer": "workspace:*" }
+  "files": ["dist", "rules", "LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md", "README.md"],
+  "publishConfig": { "access": "public" },
+  "scripts": {
+    "prepare:assets": "node scripts/prepare-assets.mjs",
+    "build": "pnpm run prepare:assets && node scripts/build.mjs",
+    "check": "tsc --noEmit -p tsconfig.json",
+    "test": "node --import tsx --test",
+    "start": "pnpm run prepare:assets && tsx src/index.ts",
+    "prepack": "pnpm run build"
+  },
+  "dependencies": {
+    "tree-sitter": "^0.25.0",
+    "tree-sitter-javascript": "^0.25.0",
+    "tree-sitter-typescript": "^0.23.2"
+  },
+  "devDependencies": {
+    "@vulnweave/core": "workspace:*",
+    "@vulnweave/gitleaks-analyzer": "workspace:*",
+    "@vulnweave/mock-analyzer": "workspace:*",
+    "@vulnweave/osv-analyzer": "workspace:*",
+    "@vulnweave/semgrep-analyzer": "workspace:*",
+    "@vulnweave/tree-sitter-indexer": "workspace:*",
+    "@vulnweave/trivy-analyzer": "workspace:*",
+    "esbuild": "^0.28.2"
+  }
 }

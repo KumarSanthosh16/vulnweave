@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { parseSemgrepReport, relativizeFindings } from "./index.js";
 
@@ -24,4 +25,13 @@ test("removes local config prefixes and makes findings portable to the scan root
   assert.equal(finding?.title, "vulnweave.javascript.no-eval");
   assert.equal(finding?.location?.path, "src/eval-demo.ts");
   assert.equal(finding?.evidence?.[0]?.location?.path, "src/eval-demo.ts");
+});
+
+test("ships focused Python and Node web-security packs with provenance", async () => {
+  const pythonPack = await readFile(new URL("../../../rules/packs/python-web-security.yml", import.meta.url), "utf8");
+  const nodePack = await readFile(new URL("../../../rules/packs/node-web-security.yml", import.meta.url), "utf8");
+  assert.match(pythonPack, /vulnweave\.python-web-security\.flask-debug-server/);
+  assert.match(pythonPack, /vulnweavePack: python-web-security/);
+  assert.match(nodePack, /vulnweave\.node-web-security\.express-open-cors/);
+  assert.match(nodePack, /vulnweavePack: node-web-security/);
 });

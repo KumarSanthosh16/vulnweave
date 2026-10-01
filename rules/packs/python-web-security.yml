@@ -1,0 +1,21 @@
+rules:
+  - id: vulnweave.python-web-security.flask-debug-server
+    message: Do not run a Flask application with debug=True outside local development.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: CWE-489
+      technology: [python, flask]
+      vulnweavePack: python-web-security
+    pattern: $APP.run(..., debug=True, ...)
+  - id: vulnweave.python-web-security.unverified-tls-context
+    message: Do not create an unverified TLS context; validate certificates instead.
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: CWE-295
+      technology: [python]
+      vulnweavePack: python-web-security
+    pattern: ssl._create_unverified_context(...)

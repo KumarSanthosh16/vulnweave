@@ -1,0 +1,21 @@
+rules:
+  - id: vulnweave.node-web-security.express-open-cors
+    message: Review unrestricted CORS. Configure explicit trusted origins for production routes.
+    languages: [javascript, typescript]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: CWE-942
+      technology: [nodejs, express]
+      vulnweavePack: node-web-security
+    pattern: $APP.use(cors())
+  - id: vulnweave.node-web-security.disabled-node-tls-verification
+    message: Do not disable Node.js TLS certificate verification globally.
+    languages: [javascript, typescript]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: CWE-295
+      technology: [nodejs]
+      vulnweavePack: node-web-security
+    pattern: process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
