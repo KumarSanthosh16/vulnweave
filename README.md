@@ -1,5 +1,7 @@
 # VulnWeave
 
+[![npm version](https://img.shields.io/npm/v/%40vulnweave%2Fcli?label=npm)](https://www.npmjs.com/package/@vulnweave/cli)
+
 <p align="center">
   <img src="apps/docs/public/vulnweave-logo.svg" alt="VulnWeave" width="360" />
 </p>
@@ -39,7 +41,7 @@ VulnWeave does not replace security review, penetration testing, or the scanners
 
 VulnWeave requires Node.js 20 or later and the scanner binaries you choose to use—Gitleaks, Semgrep, OSV-Scanner, and Trivy. The npm package bundles the VulnWeave CLI and reviewed local rule packs; it does not bundle scanner binaries or vulnerability databases.
 
-When the package is published to npm, install it with:
+Install the released CLI from npm:
 
 ```bash
 npm install --global @vulnweave/cli
@@ -51,7 +53,7 @@ vulnweave quality .
 vulnweave report . > vulnweave-report.html
 ```
 
-Until a published npm version is available, run from a source checkout instead:
+For development from a source checkout instead:
 
 ```bash
 pnpm install
