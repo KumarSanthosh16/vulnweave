@@ -9,7 +9,7 @@
   "license": "Apache-2.0",
   "type": "module",
   "engines": { "node": ">=20" },
-  "bin": { "vulnweave": "./dist/index.js" },
+  "bin": { "vulnweave": "dist/index.js" },
   "files": ["dist", "rules", "LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md", "README.md"],
   "publishConfig": { "access": "public" },
   "scripts": {
