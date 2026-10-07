@@ -15,7 +15,9 @@ await build({
   platform: "node",
   format: "esm",
   target: "node20",
-  external: ["tree-sitter", "tree-sitter-javascript", "tree-sitter-typescript"],
+  // Native grammars and YAML remain runtime dependencies. In particular, YAML's
+  // CommonJS compatibility paths cannot be safely inlined into our ESM CLI.
+  external: ["tree-sitter", "tree-sitter-javascript", "tree-sitter-typescript", "yaml"],
   alias: {
     "@vulnweave/core": packageSource("core"),
     "@vulnweave/gitleaks-analyzer": packageSource("gitleaks-analyzer"),

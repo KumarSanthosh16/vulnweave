@@ -167,6 +167,9 @@ importers:
       tree-sitter-typescript:
         specifier: ^0.23.2
         version: 0.23.2(tree-sitter@0.25.1)
+      yaml:
+        specifier: ^2.9.1
+        version: 2.9.1
     devDependencies:
       '@vulnweave/core':
         specifier: workspace:*
