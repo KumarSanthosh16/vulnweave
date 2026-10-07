@@ -5,9 +5,9 @@ import { expandFriendlyCommand } from "./friendly-commands.js";
 test("expands compact scan and report commands", () => {
   assert.deepEqual(expandFriendlyCommand(["scan", "."]), [".", "--format", "summary"]);
   assert.deepEqual(expandFriendlyCommand(["--", "scan", "."]), ["--", ".", "--format", "summary"]);
-  assert.deepEqual(expandFriendlyCommand(["report", "."]), [".", "--format", "html"]);
+  assert.deepEqual(expandFriendlyCommand(["report", "."]), [".", "--format", "html", "--no-gate"]);
   assert.deepEqual(expandFriendlyCommand(["baseline", "."]), [".", "--format", "baseline", "--no-gate"]);
-  assert.deepEqual(expandFriendlyCommand(["plan", "."]), [".", "--format", "plan"]);
+  assert.deepEqual(expandFriendlyCommand(["plan", "."]), [".", "--format", "plan", "--no-gate"]);
 });
 
 test("expands review base reference and CI health requirements", () => {

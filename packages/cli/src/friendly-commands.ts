@@ -11,11 +11,13 @@ export function expandFriendlyCommand(values: string[]): string[] {
   if (command === "init") return ["--init", ...rest];
   if (command === "doctor") return ["--version"];
   if (command === "scan") return [...rest, "--format", "summary"];
-  if (command === "report") return [...rest, "--format", "html"];
+  // These commands display existing scanner evidence. Their output must remain
+  // available for triage even when a separate scan or CI gate correctly fails.
+  if (command === "report") return [...rest, "--format", "html", "--no-gate"];
   if (command === "findings") return [...rest, "--format", "table"];
   if (command === "quality") return [...rest, "--format", "quality"];
   if (command === "priorities") return [...rest, "--format", "priorities"];
-  if (command === "plan") return [...rest, "--format", "plan"];
+  if (command === "plan") return [...rest, "--format", "plan", "--no-gate"];
   if (command === "history") return [...rest, "--format", "trend"];
   if (command === "baseline") return [...rest, "--format", "baseline", "--no-gate"];
   if (command === "ci") return [...rest, "--format", "summary", "--require-analyzers"];
