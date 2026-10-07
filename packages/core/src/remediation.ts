@@ -1,5 +1,6 @@
 import type { DependencyReachability } from "./dependency-reachability.js";
 import type { Finding } from "./schemas.js";
+import { pythonDependencyUpdateGuidance } from "./dependency-guidance.js";
 
 /** Deterministic next-step guidance derived only from normalized scanner evidence. */
 export interface RemediationAdvice {
@@ -42,8 +43,9 @@ function remediationFor(finding: Finding, reachability: DependencyReachability |
       ? `Static imports were observed in ${reachability.usages.length} indexed file${reachability.usages.length === 1 ? "" : "s"}.`
       : "No indexed JavaScript/TypeScript import was observed; review other languages, dynamic loading, and deployment use before deprioritizing.";
     const manifestText = sourcePath ? ` The scanner located it in ${sourcePath}.` : "";
-    const ecosystemStep = fixedVersion && (ecosystem === "PyPI" || /(^|[/\\])requirements(?:-[^/\\]+)?\.txt$/i.test(sourcePath ?? ""))
-      ? ` Update the requirement declaration to ${fixedVersion} or later and recreate the environment or lockfile.`
+    const pythonGuidance = fixedVersion ? pythonDependencyUpdateGuidance(packageName, fixedVersion, sourcePath, ecosystem) : undefined;
+    const ecosystemStep = pythonGuidance
+      ? ` ${pythonGuidance}`
       : fixedVersion && (ecosystem === "npm" || /(?:package-lock\.json|npm-shrinkwrap\.json|package\.json)$/i.test(sourcePath ?? ""))
         ? " Update the package manifest and regenerate its lockfile."
         : "";

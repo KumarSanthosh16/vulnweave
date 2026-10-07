@@ -7,6 +7,7 @@ test("expands compact scan and report commands", () => {
   assert.deepEqual(expandFriendlyCommand(["--", "scan", "."]), ["--", ".", "--format", "summary"]);
   assert.deepEqual(expandFriendlyCommand(["report", "."]), [".", "--format", "html"]);
   assert.deepEqual(expandFriendlyCommand(["baseline", "."]), [".", "--format", "baseline", "--no-gate"]);
+  assert.deepEqual(expandFriendlyCommand(["plan", "."]), [".", "--format", "plan"]);
 });
 
 test("expands review base reference and CI health requirements", () => {

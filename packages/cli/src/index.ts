@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { AnalysisOrchestrator, analyzeChangeImpact, applySuppressions, assessDependencyReachability, assignFindingOwners, buildDependencyUpgradePlan, buildEvidenceGraph, buildFindingBaseline, buildRemediationAdvice, buildScanTrend, changedPaths, changedPathsSince, compareFindingsToBaseline, compareScanRecords, correlateFindings, evaluateAnalyzerHealth, evaluateGate, evaluateQualityGate, filterFindings, findingsInChangeScope, formatAnalyzerHealth, formatChangeImpact, formatDependencyReachability, formatDependencyUpgradePlan, formatFindingBaseline, formatFindingExplanation, formatFindingsTable, formatGateResult, formatGraphSummary, formatHotspotTable, formatOwnershipTable, formatPriorityTable, formatQualityGate, formatQualityTable, formatRemediationTable, formatReviewPacket, formatScanSummary, formatScanTrend, formatVersionReport, inspectToolVersions, linkFindingsToSymbols, listScanRecords, loadBaselinePolicy, loadCodeOwners, loadFindingBaseline, loadProjectConfig, loadScanRecord, rankFileHotspots, rankFindings, runAnalyzers, saveScanRecord, toHtmlReport, toSarif, type FindingCategory, type FindingSuppression, type Severity } from "@vulnweave/core";
+import { AnalysisOrchestrator, analyzeChangeImpact, applySuppressions, assessDependencyReachability, assignFindingOwners, buildDependencyUpgradePlan, buildEvidenceGraph, buildFindingBaseline, buildRemediationAdvice, buildRemediationPlan, buildScanTrend, changedPaths, changedPathsSince, compareFindingsToBaseline, compareScanRecords, correlateFindings, evaluateAnalyzerHealth, evaluateGate, evaluateQualityGate, filterFindings, findingsInChangeScope, formatAnalyzerHealth, formatChangeImpact, formatDependencyReachability, formatDependencyUpgradePlan, formatFindingBaseline, formatFindingExplanation, formatFindingsTable, formatGateResult, formatGraphSummary, formatHotspotTable, formatOwnershipTable, formatPriorityTable, formatQualityGate, formatQualityTable, formatRemediationPlan, formatRemediationTable, formatReviewPacket, formatScanSummary, formatScanTrend, formatVersionReport, inspectToolVersions, linkFindingsToSymbols, listScanRecords, loadBaselinePolicy, loadCodeOwners, loadFindingBaseline, loadProjectConfig, loadScanRecord, rankFileHotspots, rankFindings, runAnalyzers, saveScanRecord, toHtmlReport, toSarif, type FindingCategory, type FindingSuppression, type Severity } from "@vulnweave/core";
 import { GitleaksAnalyzer } from "@vulnweave/gitleaks-analyzer";
 import { MockAnalyzer } from "@vulnweave/mock-analyzer";
 import { OsvAnalyzer } from "@vulnweave/osv-analyzer";
@@ -21,7 +21,7 @@ if (args.includes("--version") || args.includes("-V")) {
   process.exit(0);
 }
 if (args.includes("--help") || args.includes("-h")) {
-  console.log(`${friendlyCommandHelp}\n\nAdvanced usage:\n  vulnweave [path] [--analyzer all|mock|gitleaks|osv|semgrep|trivy] [--gitleaks-config rules.toml] [--semgrep-config rules.yml] [--semgrep-pack typescript-security|typescript-quality|python-security|python-web-security|node-web-security] [--format json|summary|table|quality|graph|symbols|priorities|hotspots|changes|review|trend|reachability|upgrades|remediation|ownership|explain|sarif|html|baseline] [--history N] [--changed-since git-ref] [--review-changes] [--finding id] [--severity level] [--category type] [--filter-analyzer id] [--include-tests] [--top N] [--baseline latest|run-id] [--baseline-file baseline.json] [--fail-on info|low|medium|high|critical] [--require-analyzers] [--compare latest|run-id] [--no-save] [--no-gate] [--version]\n\nResults are saved locally under .vulnweave/ unless --no-save is used.`);
+  console.log(`${friendlyCommandHelp}\n\nAdvanced usage:\n  vulnweave [path] [--analyzer all|mock|gitleaks|osv|semgrep|trivy] [--gitleaks-config rules.toml] [--semgrep-config rules.yml] [--semgrep-pack typescript-security|typescript-quality|python-security|python-web-security|node-web-security] [--format json|summary|table|quality|graph|symbols|priorities|hotspots|changes|review|trend|reachability|upgrades|remediation|plan|ownership|explain|sarif|html|baseline] [--history N] [--changed-since git-ref] [--review-changes] [--finding id] [--severity level] [--category type] [--filter-analyzer id] [--include-tests] [--top N] [--baseline latest|run-id] [--baseline-file baseline.json] [--fail-on info|low|medium|high|critical] [--require-analyzers] [--compare latest|run-id] [--no-save] [--no-gate] [--version]\n\nResults are saved locally under .vulnweave/ unless --no-save is used.`);
   process.exit(0);
 }
 if (args.includes("--init")) {
@@ -65,6 +65,7 @@ const dependencyUpgradePlan = buildDependencyUpgradePlan(findings, dependencyRea
 const remediation = buildRemediationAdvice(findings, dependencyReachability);
 const ownershipRules = await loadCodeOwners(options.rootDir);
 const ownership = assignFindingOwners(findings, ownershipRules);
+const remediationPlan = buildRemediationPlan(findings, remediation, ownership, dependencyUpgradePlan, suppressionResult.suppressed);
 const symbolLinks = linkFindingsToSymbols(findings, symbols);
 const changedFiles = options.changedSince ? await changedPathsSince(options.rootDir, options.changedSince) : await changedPaths(options.rootDir);
 const impactAssessments = rankFindings(findings, symbolLinks, changedFiles, imports, dependencyReachability);
@@ -82,14 +83,15 @@ const gateCandidates = options.reviewChanges
 const gate = evaluateGate(gateCandidates.filter((finding) => !suppressionResult.suppressed.some((suppression) => suppression.findingId === finding.id)), options.failOn);
 const analyzerHealth = evaluateAnalyzerHealth(batch?.analyzers, options.requireAnalyzers);
 const record = options.save
-  ? await saveScanRecord({ startedAt, rootDir: options.rootDir, analyzerId, findings, sourceFindingCount: correlation.sourceFindingCount, analyzers: batch?.analyzers, symbols, imports, dependencyUsages, dependencyReachability, dependencyUpgradePlan, remediation, ownership, symbolLinks, impactAssessments, changedPaths: changedFiles, changeImpact, qualitySignals, qualityGate, gate, analyzerHealth, suppressions: suppressionResult.suppressed })
-  : { schemaVersion: 1 as const, id: "unsaved", startedAt, completedAt: new Date().toISOString(), rootDir: options.rootDir, analyzerId, findings, sourceFindingCount: correlation.sourceFindingCount, analyzers: batch?.analyzers, symbols, imports, dependencyUsages, dependencyReachability, dependencyUpgradePlan, remediation, ownership, symbolLinks, impactAssessments, changedPaths: changedFiles, changeImpact, qualitySignals, qualityGate, gate, analyzerHealth, suppressions: suppressionResult.suppressed };
+  ? await saveScanRecord({ startedAt, rootDir: options.rootDir, analyzerId, findings, sourceFindingCount: correlation.sourceFindingCount, analyzers: batch?.analyzers, symbols, imports, dependencyUsages, dependencyReachability, dependencyUpgradePlan, remediation, remediationPlan, ownership, symbolLinks, impactAssessments, changedPaths: changedFiles, changeImpact, qualitySignals, qualityGate, gate, analyzerHealth, suppressions: suppressionResult.suppressed })
+  : { schemaVersion: 1 as const, id: "unsaved", startedAt, completedAt: new Date().toISOString(), rootDir: options.rootDir, analyzerId, findings, sourceFindingCount: correlation.sourceFindingCount, analyzers: batch?.analyzers, symbols, imports, dependencyUsages, dependencyReachability, dependencyUpgradePlan, remediation, remediationPlan, ownership, symbolLinks, impactAssessments, changedPaths: changedFiles, changeImpact, qualitySignals, qualityGate, gate, analyzerHealth, suppressions: suppressionResult.suppressed };
 const comparison = previous ? compareScanRecords(record, previous) : undefined;
 const history = options.save ? await listScanRecords(options.rootDir, options.history) : [record, ...(await listScanRecords(options.rootDir, options.history - 1))];
 const trend = buildScanTrend(history);
 const displayedRecord = { ...record, findings: filterFindings(record.findings, options.filters) };
 const displayedAssessments = rankFindings(displayedRecord.findings, symbolLinks, changedFiles, imports, dependencyReachability);
 const displayedRemediation = remediation.filter((item) => displayedRecord.findings.some((finding) => finding.id === item.findingId));
+const displayedPlan = remediationPlan.filter((item) => displayedRecord.findings.some((finding) => finding.id === item.findingId));
 const explainedFinding = options.finding ? displayedRecord.findings.find((finding) => finding.id === options.finding) : displayedAssessments.length > 0 ? displayedRecord.findings.find((finding) => finding.id === displayedAssessments[0]?.findingId) : undefined;
 const gateText = formatGateResult(gate, Boolean(baseline || findingBaseline), options.reviewChanges);
 const gateViolations = options.format === "summary" && gate.violations.length > 0
@@ -108,6 +110,7 @@ const output = options.format === "summary" ? `${formatScanSummary(displayedReco
   : options.format === "reachability" ? formatDependencyReachability(dependencyReachability.filter((assessment) => displayedRecord.findings.some((finding) => finding.id === assessment.findingId)))
   : options.format === "upgrades" ? formatDependencyUpgradePlan(dependencyUpgradePlan.filter((plan) => displayedRecord.findings.some((finding) => finding.id === plan.findingId)))
   : options.format === "remediation" ? formatRemediationTable(displayedRecord.findings, displayedRemediation)
+  : options.format === "plan" ? formatRemediationPlan(displayedPlan)
   : options.format === "ownership" ? formatOwnershipTable(displayedRecord.findings, ownership.filter((item) => displayedRecord.findings.some((finding) => finding.id === item.findingId)), ownershipRules)
   : options.format === "explain" ? explainedFinding ? formatFindingExplanation(explainedFinding, displayedAssessments.find((assessment) => assessment.findingId === explainedFinding.id), symbols, symbolLinks, changedFiles, dependencyReachability) : "No findings available to explain. Use --finding <id> after a scan has findings."
   : options.format === "sarif" ? JSON.stringify(toSarif(displayedRecord.findings), null, 2)
@@ -125,7 +128,7 @@ interface ParsedOptions {
   qualityGate?: import("@vulnweave/core").QualityGatePolicy;
   semgrepConfig?: string[];
   semgrepPacks: SemgrepPack[];
-  format: "json" | "summary" | "table" | "quality" | "graph" | "symbols" | "priorities" | "hotspots" | "changes" | "review" | "trend" | "reachability" | "upgrades" | "remediation" | "ownership" | "explain" | "sarif" | "html" | "baseline";
+  format: "json" | "summary" | "table" | "quality" | "graph" | "symbols" | "priorities" | "hotspots" | "changes" | "review" | "trend" | "reachability" | "upgrades" | "remediation" | "plan" | "ownership" | "explain" | "sarif" | "html" | "baseline";
   finding?: string;
   compare?: string;
   baseline?: string;
@@ -150,7 +153,7 @@ function parseOptions(values: string[]): ParsedOptions {
   const semgrepConfig: string[] = [];
   const semgrepPacks: SemgrepPack[] = [];
   let rootDir: string | undefined;
-  let format: "json" | "summary" | "table" | "quality" | "graph" | "symbols" | "priorities" | "hotspots" | "changes" | "review" | "trend" | "reachability" | "upgrades" | "remediation" | "ownership" | "explain" | "sarif" | "html" | "baseline" = "json";
+  let format: "json" | "summary" | "table" | "quality" | "graph" | "symbols" | "priorities" | "hotspots" | "changes" | "review" | "trend" | "reachability" | "upgrades" | "remediation" | "plan" | "ownership" | "explain" | "sarif" | "html" | "baseline" = "json";
   let finding: string | undefined;
   let baseline: string | undefined;
   let findingBaselineFile: string | undefined;
@@ -229,9 +232,9 @@ function requirePositiveInteger(value: string, option: string): number {
   return parsed;
 }
 
-function requireFormat(value: string): "json" | "summary" | "table" | "quality" | "graph" | "symbols" | "priorities" | "hotspots" | "changes" | "review" | "trend" | "reachability" | "upgrades" | "remediation" | "ownership" | "explain" | "sarif" | "html" | "baseline" {
-  if (value === "json" || value === "summary" || value === "table" || value === "quality" || value === "graph" || value === "symbols" || value === "priorities" || value === "hotspots" || value === "changes" || value === "review" || value === "trend" || value === "reachability" || value === "upgrades" || value === "remediation" || value === "ownership" || value === "explain" || value === "sarif" || value === "html" || value === "baseline") return value;
-  throw new Error("--format must be json, summary, table, quality, graph, symbols, priorities, hotspots, changes, review, trend, reachability, upgrades, remediation, ownership, explain, sarif, html, or baseline");
+function requireFormat(value: string): "json" | "summary" | "table" | "quality" | "graph" | "symbols" | "priorities" | "hotspots" | "changes" | "review" | "trend" | "reachability" | "upgrades" | "remediation" | "plan" | "ownership" | "explain" | "sarif" | "html" | "baseline" {
+  if (value === "json" || value === "summary" || value === "table" || value === "quality" || value === "graph" || value === "symbols" || value === "priorities" || value === "hotspots" || value === "changes" || value === "review" || value === "trend" || value === "reachability" || value === "upgrades" || value === "remediation" || value === "plan" || value === "ownership" || value === "explain" || value === "sarif" || value === "html" || value === "baseline") return value;
+  throw new Error("--format must be json, summary, table, quality, graph, symbols, priorities, hotspots, changes, review, trend, reachability, upgrades, remediation, plan, ownership, explain, sarif, html, or baseline");
 }
 
 function formatSymbols(symbols: Awaited<ReturnType<typeof indexSymbols>>): string {

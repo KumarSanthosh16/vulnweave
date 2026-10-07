@@ -12,6 +12,7 @@ import type { AnalyzerHealthResult } from "./analyzer-health.js";
 import type { AppliedSuppression } from "./suppressions.js";
 import type { ChangeImpact } from "./impact-surface.js";
 import type { RemediationAdvice } from "./remediation.js";
+import type { RemediationPlanItem } from "./remediation-plan.js";
 import type { FindingOwnership } from "./ownership.js";
 import type { DependencyUpgradePlan } from "./upgrade-plan.js";
 import type { QualitySignal } from "./code-quality.js";
@@ -36,6 +37,7 @@ export interface ScanRecord {
   dependencyUsages?: DependencyUsage[];
   dependencyReachability?: DependencyReachability[];
   remediation?: RemediationAdvice[];
+  remediationPlan?: RemediationPlanItem[];
   ownership?: FindingOwnership[];
   dependencyUpgradePlan?: DependencyUpgradePlan[];
   gate?: GateResult;

@@ -56,6 +56,9 @@ jobs:
           else
             pnpm cli -- . --format summary
           fi
+      - name: Publish remediation summary
+        if: always()
+        run: node packages/cli/scripts/github-step-summary.mjs . >> "$GITHUB_STEP_SUMMARY"
       # This step deliberately runs even when the gate fails, so SARIF remains
       # available for triage and does not depend on an earlier build directory.
       - name: Build SARIF exporter

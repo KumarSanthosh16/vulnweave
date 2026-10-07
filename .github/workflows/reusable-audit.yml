@@ -81,6 +81,10 @@ jobs:
             baseline_args=(--baseline-file "../target/$VULNWEAVE_BASELINE_FILE")
           fi
           pnpm cli -- ../target --semgrep-config rules/vulnweave-starter.yml --format summary --fail-on "${{ inputs.fail-on }}" --require-analyzers "${baseline_args[@]}"
+      - name: Publish remediation summary
+        if: always()
+        working-directory: tool
+        run: node packages/cli/scripts/github-step-summary.mjs ../target >> "$GITHUB_STEP_SUMMARY"
       - name: Create HTML report
         if: always()
         working-directory: tool

@@ -13,7 +13,7 @@ test("offers dependency upgrades only as advisory next steps", () => {
 test("uses manifest-aware guidance for Python requirements", () => {
   const finding: Finding = { id: "python-dependency", analyzer: "osv", ruleId: "GHSA-test", category: "dependency", severity: "high", title: "affected Python package", message: "x", metadata: { package: "example-python", version: "1.0.0", fixedVersion: "1.0.1", sourcePath: "requirements.txt", ecosystem: "PyPI" }, evidence: [] };
   const [advice] = buildRemediationAdvice([finding]);
-  assert.match(advice?.action ?? "", /requirement declaration to 1\.0\.1 or later/);
+  assert.match(advice?.action ?? "", /requirements\.txt to 1\.0\.1 or later/);
   assert.match(advice?.action ?? "", /recreate the environment or lockfile/);
 });
 

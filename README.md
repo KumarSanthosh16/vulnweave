@@ -62,10 +62,11 @@ pnpm cli -- doctor
 pnpm cli -- scan .
 pnpm cli -- findings .
 pnpm cli -- quality .
+pnpm cli -- plan .
 pnpm cli -- report . > vulnweave-report.html
 ```
 
-Open `vulnweave-report.html` locally to view the dashboard. Without a project configuration, `scan .` runs all available real analyzers; use `"analyzer"` in `vulnweave.config.json` to select a subset. OSV-Scanner covers committed manifests and lockfiles, including manifest-only Python projects using `requirements.txt`, and reports incomplete dependency coverage as analyzer failure rather than a clean result. `vulnweave.baseline.json` defines the reviewable gate policy. Scan history is stored locally in `.vulnweave/` and is ignored by Git.
+Open `vulnweave-report.html` locally to view the dashboard. Without a project configuration, `scan .` runs all available real analyzers; use `"analyzer"` in `vulnweave.config.json` to select a subset. OSV-Scanner covers committed manifests and lockfiles it recognizes, including manifest-only Python projects using `requirements.txt`; VulnWeave preserves reported Python paths for `requirements` files, Poetry, Pipenv, uv, and `pyproject.toml` so remediation points to the dependency declaration rather than telling you to edit a generated lockfile. An incomplete OSV report is treated as analyzer failure rather than a clean result. `vulnweave.baseline.json` defines the reviewable gate policy. Scan history is stored locally in `.vulnweave/` and is ignored by Git.
 
 `init` never overwrites existing policy files. It creates a starter configuration, a High-severity baseline policy, and a small Semgrep rule file for projects that do not already have them. Review these files before committing them to a repository.
 
@@ -153,7 +154,7 @@ jobs:
       fail-on: high
 ```
 
-It scans the calling repository, applies the gate, and uploads an HTML artifact for triage. Pin to a reviewed release tag or commit SHA for production use rather than tracking `main`.
+It scans the calling repository, applies the gate, writes a remediation summary on the GitHub Actions run page, and uploads an HTML artifact for triage. The summary remains available when a gate fails and shows active work plus any accepted risks and their expiry. Pin to a reviewed release tag or commit SHA for production use rather than tracking `main`.
 
 Tree-sitter belongs beside that graph as a local code-structure provider, not as an analyzer replacement. AI should consume normalized evidence and graph context to explain prioritization or propose remediation; it must not be the source of record for scanner claims.
 
@@ -201,6 +202,8 @@ pnpm cli -- doctor
 ```
 
 `report` writes HTML to standard output so it can be saved without a server: `pnpm cli -- report . > vulnweave-report.html`. The existing flag-based interface remains available for scripting, filtering, and scanner-specific options.
+
+`plan` creates a single reviewable remediation queue. It combines canonical findings with scanner-derived remediation, dependency upgrade targets when a scanner reports them, local `CODEOWNERS` routing, and approved time-bounded suppressions. Accepted risks remain visible with their owner and expiry date. Python upgrade guidance is lockfile-aware: it directs Poetry, Pipenv, and uv findings to their declaration file and gives the appropriate lock-refresh step. The command is advisory: it never edits dependency manifests, source files, or policy.
 
 `quality` is advisory-only by default. It reports correlated duplicate implementations (using normalized source-block and parsed function-body evidence), cyclomatic complexity, oversized functions, excessive parameter counts, deep nesting, and non-entry source files with no observed local static import. An unreferenced-file signal is not proof that code is dead: dynamic imports, framework routing, generated code, and other packages may still consume it.
 

@@ -9,3 +9,11 @@ test("plans only scanner-reported dependency upgrades without changing packages"
   assert.match(formatDependencyUpgradePlan([plan!]), /no files are changed/);
   assert.match(formatDependencyUpgradePlan([plan!]), /recreate the environment or lockfile/);
 });
+
+test("directs Poetry findings to pyproject rather than a generated lockfile", () => {
+  const finding: Finding = { id: "poetry", analyzer: "osv", ruleId: "GHSA", category: "dependency", severity: "high", title: "issue", message: "x", metadata: { package: "example", version: "1.0.0", fixedVersion: "1.2.0", sourcePath: "services/api/poetry.lock", ecosystem: "PyPI" }, evidence: [] };
+  const [plan] = buildDependencyUpgradePlan([finding]);
+  assert.match(plan?.recommendedChange ?? "", /services\/api\/pyproject\.toml/);
+  assert.match(plan?.recommendedChange ?? "", /poetry lock/);
+  assert.doesNotMatch(plan?.recommendedChange ?? "", /Update example in services\/api\/poetry\.lock/);
+});

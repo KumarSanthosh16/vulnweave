@@ -1,5 +1,6 @@
 import type { DependencyReachability } from "./dependency-reachability.js";
 import type { Finding } from "./schemas.js";
+import { pythonDependencyUpdateGuidance } from "./dependency-guidance.js";
 
 export interface DependencyUpgradePlan {
   findingId: string;
@@ -62,10 +63,9 @@ function textMetadata(finding: Finding, key: string): string {
 
 function recommendedChange(packageName: string, targetVersion: string | undefined, sourcePath: string | undefined, ecosystem: string | undefined): string {
   if (!targetVersion) return "Review the advisory for a safe target version; VulnWeave does not guess one.";
+  const pythonGuidance = pythonDependencyUpdateGuidance(packageName, targetVersion, sourcePath, ecosystem);
+  if (pythonGuidance) return pythonGuidance;
   const manifest = sourcePath ?? "the declared dependency manifest";
-  if (ecosystem === "PyPI" || /(^|[/\\])requirements(?:-[^/\\]+)?\.txt$/i.test(manifest)) {
-    return `Update ${packageName} in ${manifest} to ${targetVersion} or later, then recreate the environment or lockfile.`;
-  }
   if (ecosystem === "npm" || /(?:package-lock\.json|npm-shrinkwrap\.json|package\.json)$/i.test(manifest)) {
     return `Update ${packageName} in the package manifest, regenerate the lockfile, then review compatibility.`;
   }
