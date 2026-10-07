@@ -1,6 +1,10 @@
 packages:
   - "packages/*"
   - "apps/*"
+overrides:
+  http-cache-semantics: 4.3.0
+  sharp: 0.35.5
+  source-map-js: 1.2.2
 allowBuilds:
   esbuild: true
   sharp: true
@@ -11,3 +15,4 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - '@astrojs/markdown-satteri@0.4.2'
   - astro@7.3.4
+  - astro@7.3.5
