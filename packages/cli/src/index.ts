@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { AnalysisOrchestrator, analyzeChangeImpact, applySuppressions, assessDependencyReachability, assignFindingOwners, buildDependencyUpgradePlan, buildEvidenceGraph, buildFindingBaseline, buildRemediationAdvice, buildRemediationPlan, buildScanTrend, changedPaths, changedPathsSince, compareFindingsToBaseline, compareScanRecords, correlateFindings, evaluateAnalyzerHealth, evaluateGate, evaluateQualityGate, filterFindings, findingsInChangeScope, formatAnalyzerHealth, formatChangeImpact, formatDependencyReachability, formatDependencyUpgradePlan, formatFindingBaseline, formatFindingExplanation, formatFindingsTable, formatGateResult, formatGraphSummary, formatHotspotTable, formatOwnershipTable, formatPriorityTable, formatQualityGate, formatQualityTable, formatRemediationPlan, formatRemediationTable, formatReviewPacket, formatScanSummary, formatScanTrend, formatVersionReport, inspectToolVersions, linkFindingsToSymbols, listScanRecords, loadBaselinePolicy, loadCodeOwners, loadFindingBaseline, loadProjectConfig, loadScanRecord, rankFileHotspots, rankFindings, runAnalyzers, saveScanRecord, toHtmlReport, toSarif, type FindingCategory, type FindingSuppression, type Severity } from "@vulnweave/core";
+import { AnalysisOrchestrator, analyzeChangeImpact, applySuppressions, assessDependencyReachability, assignFindingOwners, buildDependencyUpgradePlan, buildEvidenceGraph, buildFindingBaseline, buildRemediationAdvice, buildRemediationPlan, buildScanTrend, changedPaths, changedPathsSince, compareFindingsToBaseline, compareScanRecords, correlateFindings, evaluateAnalyzerHealth, evaluateGate, evaluateQualityGate, filterFindings, findingsInChangeScope, formatAnalyzerHealth, formatChangeImpact, formatDependencyReachability, formatDependencyUpgradePlan, formatFindingBaseline, formatFindingExplanation, formatFindingsTable, formatGateResult, formatGraphSummary, formatHotspotTable, formatOwnershipTable, formatPriorityTable, formatQualityGate, formatQualityTable, formatRemediationPlan, formatRemediationTable, formatReviewPacket, formatScanSummary, formatScanTrend, formatVersionReport, inspectToolVersions, linkFindingsToSymbols, listScanRecords, loadBaselinePolicy, loadCodeOwners, loadFindingBaseline, loadProjectConfig, loadScanRecord, rankFileHotspots, rankFindings, runAnalyzers, saveScanRecord, toHtmlReport, toSarif, type ConfiguredRealAnalyzer, type FindingCategory, type FindingSuppression, type Severity } from "@vulnweave/core";
 import { GitleaksAnalyzer } from "@vulnweave/gitleaks-analyzer";
 import { MockAnalyzer } from "@vulnweave/mock-analyzer";
 import { OsvAnalyzer } from "@vulnweave/osv-analyzer";
@@ -33,28 +33,28 @@ if (args.includes("--init")) {
 }
 
 const options = await resolveOptions(parseOptions(args));
-if (options.requireAnalyzers && options.analyzer !== "all") throw new Error("--require-analyzers is only valid with --analyzer all");
+if (options.requireAnalyzers && options.analyzer !== "all" && !options.configuredAnalyzers) throw new Error("--require-analyzers is only valid with --analyzer all or a configured analyzers list");
 if (options.baseline && options.findingBaselineFile) throw new Error("Use either --baseline for a saved local run or --baseline-file for a committed finding snapshot, not both.");
 const adapter = options.analyzer === "mock" ? new MockAnalyzer()
   : options.analyzer === "gitleaks" ? new GitleaksAnalyzer()
   : options.analyzer === "osv" ? new OsvAnalyzer()
   : options.analyzer === "semgrep" ? new SemgrepAnalyzer()
   : options.analyzer === "trivy" ? new TrivyAnalyzer() : undefined;
-if (!adapter && options.analyzer !== "all") throw new Error(`Unknown analyzer '${options.analyzer}'. Use all, mock, gitleaks, osv, semgrep, or trivy.`);
+if (!adapter && options.analyzer !== "all" && options.analyzer !== "configured") throw new Error(`Unknown analyzer '${options.analyzer}'. Use all, mock, gitleaks, osv, semgrep, or trivy.`);
 const previous = options.compare ? await loadScanRecord(options.rootDir, options.compare) : undefined;
 const baseline = options.baseline ? await loadScanRecord(options.rootDir, options.baseline) : undefined;
 const findingBaseline = options.findingBaselineFile ? await loadFindingBaseline(options.findingBaselineFile) : undefined;
 const startedAt = new Date().toISOString();
 const request = { rootDir: options.rootDir, config: { semgrepConfig: options.semgrepConfig, gitleaksConfig: options.gitleaksConfig } };
-const batch = options.analyzer === "all"
-  ? await runAnalyzers([new GitleaksAnalyzer(), new OsvAnalyzer(), new SemgrepAnalyzer(), new TrivyAnalyzer()], request)
+const batch = options.analyzer === "all" || options.configuredAnalyzers
+  ? await runAnalyzers(availableAnalyzers(options.configuredAnalyzers), request)
   : undefined;
 const result = adapter ? await new AnalysisOrchestrator().run(adapter, request) : undefined;
 const rawFindings = batch?.findings ?? result?.findings ?? [];
 const correlation = correlateFindings(rawFindings);
 const findings = correlation.findings;
 const suppressionResult = applySuppressions(findings, options.suppressions);
-const analyzerId = options.analyzer === "all" ? "combined" : adapter?.id ?? "unknown";
+const analyzerId = batch ? "combined" : adapter?.id ?? "unknown";
 const symbols = await indexSymbols(options.rootDir, { includeTests: options.includeTests });
 const imports = await indexImports(options.rootDir, { includeTests: options.includeTests });
 const dependencyUsages = await indexDependencyUsages(options.rootDir, { includeTests: options.includeTests });
@@ -63,7 +63,7 @@ const qualityGate = evaluateQualityGate(qualitySignals, options.qualityGate);
 const dependencyReachability = assessDependencyReachability(findings, dependencyUsages);
 const dependencyUpgradePlan = buildDependencyUpgradePlan(findings, dependencyReachability);
 const remediation = buildRemediationAdvice(findings, dependencyReachability);
-const ownershipRules = await loadCodeOwners(options.rootDir);
+const ownershipRules = [...(await loadCodeOwners(options.rootDir)), ...options.owners];
 const ownership = assignFindingOwners(findings, ownershipRules);
 const remediationPlan = buildRemediationPlan(findings, remediation, ownership, dependencyUpgradePlan, suppressionResult.suppressed);
 const symbolLinks = linkFindingsToSymbols(findings, symbols);
@@ -145,7 +145,7 @@ interface ParsedOptions {
   filters: { severity?: Severity; category?: FindingCategory; analyzer?: string };
 }
 
-interface ResolvedOptions extends Omit<ParsedOptions, "analyzer"> { analyzer: string; suppressions: FindingSuppression[]; }
+interface ResolvedOptions extends Omit<ParsedOptions, "analyzer"> { analyzer: string; configuredAnalyzers?: ConfiguredRealAnalyzer[]; suppressions: FindingSuppression[]; owners: import("@vulnweave/core").CodeOwnersRule[]; }
 
 function parseOptions(values: string[]): ParsedOptions {
   let analyzer: string | undefined;
@@ -215,15 +215,27 @@ async function resolveOptions(parsed: ParsedOptions): Promise<ResolvedOptions> {
     ...parsed,
     // A user scanning an existing repository expects real coverage. The mock
     // adapter remains available only when explicitly requested for examples.
-    analyzer: parsed.analyzer ?? config?.analyzer ?? "all",
+    analyzer: parsed.analyzer ?? config?.analyzer ?? (config?.analyzers ? "configured" : "all"),
+    configuredAnalyzers: parsed.analyzer === undefined ? config?.analyzers : undefined,
     gitleaksConfig: parsed.gitleaksConfig ?? (config?.gitleaksConfig ? resolve(parsed.rootDir, config.gitleaksConfig) : undefined),
     quality: config?.quality,
     qualityGate: config?.qualityGate,
     semgrepConfig: [...(parsed.semgrepConfig ?? (config?.semgrepConfig ? [resolve(parsed.rootDir, config.semgrepConfig)] : [])), ...parsed.semgrepPacks.map((pack) => resolve(bundledPackDirectory, `${pack}.yml`))],
     failOn: parsed.failOn ?? config?.failOn ?? baselinePolicy?.failOn,
     requireAnalyzers: parsed.requireAnalyzers || (parsed.analyzer === undefined && (config?.requireAnalyzers === true || baselinePolicy?.requireAnalyzers === true)),
-    suppressions: [...(baselinePolicy?.suppressions ?? []), ...(config?.suppressions ?? [])]
+    suppressions: [...(baselinePolicy?.suppressions ?? []), ...(config?.suppressions ?? [])],
+    owners: config?.owners ?? []
   };
+}
+
+function availableAnalyzers(selection?: ConfiguredRealAnalyzer[]) {
+  const adapters = {
+    gitleaks: new GitleaksAnalyzer(),
+    osv: new OsvAnalyzer(),
+    semgrep: new SemgrepAnalyzer(),
+    trivy: new TrivyAnalyzer()
+  } satisfies Record<ConfiguredRealAnalyzer, GitleaksAnalyzer | OsvAnalyzer | SemgrepAnalyzer | TrivyAnalyzer>;
+  return selection ? selection.map((analyzer) => adapters[analyzer]) : Object.values(adapters);
 }
 
 function requirePositiveInteger(value: string, option: string): number {

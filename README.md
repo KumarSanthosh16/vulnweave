@@ -245,7 +245,23 @@ For a one-off scan, use `pnpm cli -- scan . --gitleaks-config .gitleaks.toml`.
 
 ## Project policy
 
-`vulnweave.config.json` is a versioned, committed scan configuration. It selects analyzers, rules, and the baseline policy file. `vulnweave.baseline.json` is the separate reviewable risk policy: it holds the gate threshold, analyzer-health requirement, and approved exceptions. With both files committed, `pnpm cli -- . --format summary` uses those defaults; an explicitly supplied CLI option takes precedence. Keep local state and reports under `.vulnweave/`, not in either policy file.
+`.vulnweave.yml` is the preferred versioned, committed project policy. It selects analyzers, rules, gates, quality thresholds, and optional ownership routing; policy ownership rules override matching `CODEOWNERS` entries. Existing `vulnweave.config.json` files remain supported for compatibility. `init` preserves a legacy JSON configuration rather than creating a competing YAML file. `vulnweave.baseline.json` is the separate reviewable risk policy: it holds the gate threshold, analyzer-health requirement, and approved exceptions. With both files committed, `pnpm cli -- . --format summary` uses those defaults; an explicitly supplied CLI option takes precedence. Keep local state and reports under `.vulnweave/`, not in either policy file.
+
+```yaml
+# .vulnweave.yml
+schemaVersion: 1
+analyzers: [gitleaks, osv, semgrep]
+baselinePolicy: vulnweave.baseline.json
+quality:
+  complexityThreshold: 12
+qualityGate:
+  maxComplexitySignals: 8
+owners:
+  - pattern: services/payments/**
+    owners: ["@payments-team"]
+```
+
+Use `analyzer: all` for the complete supported scanner set. Alternatively, `analyzers` can contain a focused, non-empty list of `gitleaks`, `osv`, `semgrep`, and `trivy`; it cannot be combined with the legacy singular `analyzer` field. A command-line `--analyzer` option remains an explicit one-off override.
 
 ## Third-party licensing
 

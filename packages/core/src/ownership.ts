@@ -37,7 +37,7 @@ export function assignFindingOwners(findings: Finding[], rules: CodeOwnersRule[]
 }
 
 export function formatOwnershipTable(findings: Finding[], ownership: FindingOwnership[], rules: CodeOwnersRule[]): string {
-  if (rules.length === 0) return "No CODEOWNERS file was found. Add .github/CODEOWNERS to enable local ownership routing.";
+  if (rules.length === 0) return "No ownership rules were found. Add .github/CODEOWNERS or owners in .vulnweave.yml to enable local ownership routing.";
   const findingById = new Map(findings.map((finding) => [finding.id, finding]));
   const rows = ownership.flatMap((item) => {
     const finding = findingById.get(item.findingId);

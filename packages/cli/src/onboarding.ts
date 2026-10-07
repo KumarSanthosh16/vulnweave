@@ -1,12 +1,7 @@
 import { access, mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
-const starterConfig = {
-  schemaVersion: 1,
-  analyzer: "all",
-  semgrepConfig: "rules/vulnweave-starter.yml",
-  baselinePolicy: "vulnweave.baseline.json"
-};
+const starterConfig = `# Review and commit this policy with your repository.\nschemaVersion: 1\nanalyzer: all\n# For a focused scanner set, replace the line above with:\n# analyzers: [gitleaks, osv, semgrep]\nsemgrepConfig: rules/vulnweave-starter.yml\nbaselinePolicy: vulnweave.baseline.json\n\n# Optional project-specific ownership rules. They override matching CODEOWNERS entries.\n# owners:\n#   - pattern: services/payments/**\n#     owners: ["@payments-team"]\n`;
 
 const starterBaseline = {
   schemaVersion: 1,
@@ -58,12 +53,13 @@ export interface InitializationResult { created: string[]; existing: string[]; }
 
 /** Creates an explicit, reviewable local policy without overwriting user files. */
 export async function initializeProject(rootDir: string): Promise<InitializationResult> {
+  const legacyConfigExists = await exists(join(rootDir, "vulnweave.config.json"));
   const files = [
-    ["vulnweave.config.json", `${JSON.stringify(starterConfig, null, 2)}\n`],
+    ...(legacyConfigExists ? [] : [[".vulnweave.yml", starterConfig] as const]),
     ["vulnweave.baseline.json", `${JSON.stringify(starterBaseline, null, 2)}\n`],
     ["rules/vulnweave-starter.yml", starterSemgrepRules]
   ] as const;
-  const result: InitializationResult = { created: [], existing: [] };
+  const result: InitializationResult = { created: [], existing: legacyConfigExists ? ["vulnweave.config.json"] : [] };
   for (const [relativePath, content] of files) {
     const path = join(rootDir, relativePath);
     try {
@@ -77,6 +73,10 @@ export async function initializeProject(rootDir: string): Promise<Initialization
     }
   }
   return result;
+}
+
+async function exists(path: string): Promise<boolean> {
+  try { await access(path); return true; } catch { return false; }
 }
 
 export function formatInitialization(result: InitializationResult): string {
